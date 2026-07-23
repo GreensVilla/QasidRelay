@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check required OSS files
+        run: |
+          test -f README.md
+          test -f LICENSE
+          test -f SECURITY.md
+          test -f CONTRIBUTING.md
+          test -f CODE_OF_CONDUCT.md
+          test -f docs/protocol.md
+          test -f docs/threat-model.md
+          test -f docs/abuse-policy.md
+          test -f docs/release-checklist.md
+          test -f app/src/main/AndroidManifest.xml
+      - name: Check forbidden placeholders
+        run: |
+          ! grep -R "TODO[:][[:space:]]secret" -n .
+      - name: Check restricted SMS scope
+        run: |
+          ! grep -R "android.permission.READ_SMS" -n app/src/main/AndroidManifest.xml
+          grep -R "android.permission.SEND_SMS" -n app/src/main/AndroidManifest.xml
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Build debug APK
+        run: ./gradlew :app:assembleDebug --no-daemon
