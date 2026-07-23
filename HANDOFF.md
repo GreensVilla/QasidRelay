@@ -80,8 +80,11 @@ Release evidence:
 - `android`: passed, including `:app:testDebugUnitTest` and
   `:app:assembleDebug`
 
-Current follow-up branch targets `v0.1.1` with phone-local messaging
-enable/disable control and deferred implementation TODOs.
+Current release follow-up:
+
+- `v0.1.1` adds phone-local messaging enable/disable control and deferred
+  implementation TODOs.
+- `v0.1.2` targets downloadable debug APK artifacts from GitHub Actions.
 
 ## Protocol direction
 
