@@ -12,8 +12,10 @@ messaging, scraping, spam, or bypassing carrier/provider rules.
 
 ## Status
 
-Early development. The Android app has a working polling baseline, HMAC-signed
-requests, Keystore-backed shared-secret storage, local status reporting, and
+Release target: `0.1.0`.
+
+The Android app has a working polling baseline, HMAC-signed requests,
+Keystore-backed shared-secret storage, local status reporting, and
 request-signing unit tests. The next major milestone is real-device validation
 against a test gateway.
 
@@ -63,6 +65,10 @@ app/                  Android app module
 docs/                 protocol, threat model, testing, and compatibility notes
 .github/              CI, issue templates, and PR template
 ```
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## Development checks
 

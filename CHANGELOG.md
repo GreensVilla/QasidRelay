@@ -1,0 +1,41 @@
+# Changelog
+
+## 0.1.0 - 2026-07-23
+
+Initial OSS/private-pilot Android relay release candidate.
+
+### Added
+
+- Android app that polls an HTTPS gateway for transactional SMS jobs.
+- HMAC-signed requests with timestamp, nonce, and body SHA-256 headers.
+- Shared secret storage encrypted at rest with Android Keystore AES-GCM.
+- Operator status screen for configuration, permissions, foreground service
+  state, last poll, last delivery event, and pending status reports.
+- SMS sending through Android `SmsManager` without requesting `READ_SMS`.
+- Android sent-result callbacks before terminal status reporting.
+- Persistent status-report retry queue.
+- Bounded local recent-message ledger to reduce duplicate sends for repeated
+  message IDs.
+- JVM unit tests for request signing.
+- Protocol, threat model, abuse policy, Android compatibility, real-device
+  testing, server integration, and release checklist docs.
+
+### Security posture
+
+- Phone-initiated polling only; no inbound public API on the device.
+- Cleartext HTTP disabled by Android network security config.
+- Transactional SMS only: account verification, password recovery,
+  operational alerts, and private-pilot notifications.
+- Bulk marketing, spam, SIM farms, OTP interception, and inbound SMS reading are
+  out of scope.
+
+### Known limitations
+
+- CI validates unit tests and debug APK build, but real-device SIM validation is
+  still pending.
+- `sent` means Android accepted all SMS parts through sent callbacks. It is not
+  a carrier delivery receipt.
+- Exactly-once SMS delivery is not guaranteed. Servers must lease pending jobs
+  atomically and treat status reports as idempotent.
+- Dual-SIM routing, inbound replies, Google Play distribution, signed release
+  APKs, and GreensVilla server integration are out of scope for 0.1.0.
