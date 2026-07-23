@@ -34,7 +34,7 @@ final class SecureSecretStore {
             System.arraycopy(encrypted, 0, combined, iv.length, encrypted.length);
             return Base64.encodeToString(combined, Base64.NO_WRAP);
         } catch (Exception error) {
-            return "";
+            throw new IllegalStateException("Could not encrypt shared secret with Android Keystore", error);
         }
     }
 

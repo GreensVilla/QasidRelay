@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -51,28 +52,62 @@ public class RelayService extends Service {
 
     private void runLoop() {
         SmsSender sender = new SmsSender();
-        while (running) {
-            GatewayConfig config = GatewayConfig.load(this);
-            if (!config.isReady() || !hasSmsPermission()) {
-                sleep(10);
-                continue;
-            }
-
-            RelayClient client = new RelayClient(config);
-            try {
-                List<PendingMessage> messages = client.fetchPending();
-                for (PendingMessage message : messages) {
-                    try {
-                        sender.send(message);
-                        client.reportStatus(message, "sent", null);
-                    } catch (Exception sendError) {
-                        client.reportStatus(message, "failed", sendError.getClass().getSimpleName());
-                    }
+        RelayStatusStore.markServiceRunning(this, true);
+        try {
+            while (running) {
+                GatewayConfig config = GatewayConfig.load(this);
+                String validationError = config.validationError();
+                if (validationError != null) {
+                    RelayStatusStore.markWaiting(this, validationError);
+                    sleep(10);
+                    continue;
                 }
-            } catch (Exception error) {
-                Log.w(TAG, "Polling failed", error);
+                if (!hasSmsPermission()) {
+                    RelayStatusStore.markWaiting(this, "SMS permission is required before relay polling can start.");
+                    sleep(10);
+                    continue;
+                }
+
+                RelayClient client = new RelayClient(config);
+                try {
+                    if (!StatusReportQueue.flush(this, client)) {
+                        sleep(config.pollSeconds);
+                        continue;
+                    }
+
+                    RelayStatusStore.markPolling(this);
+                    List<PendingMessage> messages = client.fetchPending();
+                    RelayStatusStore.markPollSucceeded(this, messages.size());
+                    for (PendingMessage message : messages) {
+                        String messageValidationError = message.validationError();
+                        if (messageValidationError != null) {
+                            StatusReportQueue.enqueue(this, message.id, "failed", messageValidationError);
+                            StatusReportQueue.flush(this, client);
+                            continue;
+                        }
+                        if (RelayMessageLedger.hasSeen(this, message.id) || SmsAttemptStore.exists(this, message.id)) {
+                            RelayStatusStore.markMessageSkipped(this, message, "Message ID already handled locally.");
+                            continue;
+                        }
+
+                        RelayMessageLedger.remember(this, message.id);
+                        try {
+                            sender.send(this, message);
+                            RelayStatusStore.markMessageQueued(this, message);
+                        } catch (Exception sendError) {
+                            SmsAttemptStore.remove(this, message.id);
+                            StatusReportQueue.enqueue(this, message.id, "failed", sendError.getClass().getSimpleName());
+                            StatusReportQueue.flush(this, client);
+                        }
+                    }
+                } catch (Exception error) {
+                    Log.w(TAG, "Polling failed", error);
+                    RelayStatusStore.markPollFailed(this, error);
+                }
+                sleep(config.pollSeconds);
             }
-            sleep(config.pollSeconds);
+        } finally {
+            RelayStatusStore.markServiceRunning(this, false);
         }
     }
 
@@ -105,10 +140,19 @@ public class RelayService extends Service {
         Notification.Builder builder = Build.VERSION.SDK_INT >= 26
             ? new Notification.Builder(this, CHANNEL_ID)
             : new Notification.Builder(this);
+        Intent intent = new Intent(this, MainActivity.class);
+        PendingIntent contentIntent = PendingIntent.getActivity(
+            this,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
         return builder
             .setContentTitle(getString(R.string.app_name))
             .setContentText(getString(R.string.relay_running))
             .setSmallIcon(android.R.drawable.stat_sys_upload)
+            .setContentIntent(contentIntent)
+            .setOngoing(true)
             .build();
     }
 }

@@ -30,5 +30,9 @@
             android:name=".RelayService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+
+        <receiver
+            android:name=".SmsStatusReceiver"
+            android:exported="false" />
     </application>
 </manifest>
