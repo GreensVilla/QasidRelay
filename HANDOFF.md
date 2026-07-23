@@ -61,6 +61,14 @@ Branch CI evidence for `codex/qasidrelay-production-pass`:
 - `android`: passed, including `:app:testDebugUnitTest` and
   `:app:assembleDebug`
 
+Merged main CI evidence:
+
+- GitHub Actions run `30004080082`
+- commit `d7bbf9ebed3efa0d85eeff15896465c8a48a379b`
+- `static`: passed
+- `android`: passed, including `:app:testDebugUnitTest` and
+  `:app:assembleDebug`
+
 ## Protocol direction
 
 The Android app expects a polling server contract documented in
