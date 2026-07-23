@@ -79,6 +79,9 @@ See [CHANGELOG.md](CHANGELOG.md).
 ./gradlew :app:assembleDebug --no-daemon
 ```
 
+GitHub Actions uploads `qasidrelay-debug-apk` for CI runs. The debug APK is for
+controlled testing only; a signed release APK workflow is still deferred.
+
 ## Protocol
 
 See [docs/protocol.md](docs/protocol.md).

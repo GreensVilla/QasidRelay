@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.2 - 2026-07-23
+
+### Added
+
+- GitHub Actions debug APK artifact for phone-local testing.
+
+### Changed
+
+- Android metadata bumped to `versionCode` 3 / `versionName` `0.1.2`.
+
+### Notes
+
+- The downloadable APK is debug-signed and intended for controlled testing only.
+  A signed release APK workflow remains deferred.
+
 ## 0.1.1 - 2026-07-23
 
 ### Added

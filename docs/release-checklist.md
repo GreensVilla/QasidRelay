@@ -7,6 +7,9 @@ Use this before publishing an APK from GitHub Releases.
 - `./gradlew :app:testDebugUnitTest --no-daemon`
 - `./gradlew :app:assembleDebug --no-daemon`
 - Confirm `app/build/outputs/apk/debug/app-debug.apk` installs on a test device.
+- Confirm GitHub Actions uploaded the `qasidrelay-debug-apk` artifact.
+- If attaching a debug APK to a prerelease, label it clearly as debug-signed and
+  testing-only.
 
 ## Security
 
@@ -39,3 +42,4 @@ Use this before publishing an APK from GitHub Releases.
 - Update `docs/protocol.md` for any protocol changes.
 - Update `docs/real-device-testing.md` with device-specific findings.
 - Record known limitations in the GitHub release notes.
+- Do not present a debug APK as a production-signed release APK.
