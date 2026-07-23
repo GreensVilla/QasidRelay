@@ -3,7 +3,6 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
 
 jobs:
   static:
@@ -21,6 +20,8 @@ jobs:
           test -f docs/threat-model.md
           test -f docs/abuse-policy.md
           test -f docs/release-checklist.md
+          test -f docs/real-device-testing.md
+          test -f docs/server-integration.md
           test -f app/src/main/AndroidManifest.xml
       - name: Check forbidden placeholders
         run: |
@@ -38,5 +39,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+      - name: Run unit tests
+        run: ./gradlew :app:testDebugUnitTest --no-daemon
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --no-daemon

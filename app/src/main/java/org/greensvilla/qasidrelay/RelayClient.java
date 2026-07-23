@@ -26,41 +26,61 @@ final class RelayClient {
     List<PendingMessage> fetchPending() throws Exception {
         String encodedDeviceId = URLEncoder.encode(config.deviceId, "UTF-8");
         String path = "/api/qasid-relay/v1/messages/pending?device_id=" + encodedDeviceId + "&limit=3";
-        HttpURLConnection connection = signedConnection("GET", path, "");
-        int status = connection.getResponseCode();
-        if (status == 204) {
-            return new ArrayList<>();
-        }
-        if (status < 200 || status >= 300) {
-            throw new IllegalStateException("Pending request failed with HTTP " + status);
-        }
+        HttpURLConnection connection = null;
+        try {
+            connection = signedConnection("GET", path, "");
+            int status = connection.getResponseCode();
+            if (status == 204) {
+                return new ArrayList<>();
+            }
+            if (status < 200 || status >= 300) {
+                throw new IllegalStateException("Pending request failed with HTTP " + status);
+            }
 
-        String body = read(connection.getInputStream());
-        JSONArray messages = new JSONObject(body).optJSONArray("messages");
-        List<PendingMessage> results = new ArrayList<>();
-        if (messages == null) {
+            String body = read(connection.getInputStream());
+            JSONArray messages = new JSONObject(body).optJSONArray("messages");
+            List<PendingMessage> results = new ArrayList<>();
+            if (messages == null) {
+                return results;
+            }
+
+            for (int index = 0; index < messages.length(); index++) {
+                JSONObject object = messages.getJSONObject(index);
+                PendingMessage message = new PendingMessage(
+                    object.getString("id"),
+                    object.getString("to"),
+                    object.getString("body")
+                );
+                if (!PendingMessage.hasValidId(message.id)) {
+                    Log.w(TAG, "Skipping pending message with invalid id");
+                    continue;
+                }
+                results.add(message);
+            }
             return results;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
-
-        for (int index = 0; index < messages.length(); index++) {
-            JSONObject object = messages.getJSONObject(index);
-            results.add(new PendingMessage(
-                object.getString("id"),
-                object.getString("to"),
-                object.getString("body")
-            ));
-        }
-        return results;
     }
 
-    void reportStatus(PendingMessage message, String status, String detail) {
+    void reportStatus(String messageId, String status, String detail) throws Exception {
+        if (!PendingMessage.hasValidId(messageId)) {
+            throw new IllegalArgumentException("Invalid message id");
+        }
+        if (!"sent".equals(status) && !"failed".equals(status)) {
+            throw new IllegalArgumentException("Invalid status");
+        }
+
+        JSONObject payload = new JSONObject();
+        payload.put("status", status);
+        payload.put("detail", detail == null ? JSONObject.NULL : detail);
+        String path = "/api/qasid-relay/v1/messages/" + encodePathSegment(messageId) + "/status";
+        String body = payload.toString();
+        HttpURLConnection connection = null;
         try {
-            JSONObject payload = new JSONObject();
-            payload.put("status", status);
-            payload.put("detail", detail == null ? JSONObject.NULL : detail);
-            String path = "/api/qasid-relay/v1/messages/" + message.id + "/status";
-            String body = payload.toString();
-            HttpURLConnection connection = signedConnection("POST", path, body);
+            connection = signedConnection("POST", path, body);
             connection.setDoOutput(true);
             connection.setRequestProperty("Content-Type", "application/json");
             try (OutputStream stream = connection.getOutputStream()) {
@@ -68,10 +88,12 @@ final class RelayClient {
             }
             int code = connection.getResponseCode();
             if (code < 200 || code >= 300) {
-                Log.w(TAG, "Status report failed with HTTP " + code);
+                throw new IllegalStateException("Status report failed with HTTP " + code);
             }
-        } catch (Exception error) {
-            Log.w(TAG, "Status report failed", error);
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
     }
 
@@ -94,6 +116,10 @@ final class RelayClient {
         connection.setRequestProperty("X-Qasid-Body-SHA256", bodyHash);
         connection.setRequestProperty("X-Qasid-Signature", signature);
         return connection;
+    }
+
+    private String encodePathSegment(String value) throws Exception {
+        return URLEncoder.encode(value, "UTF-8").replace("+", "%20");
     }
 
     private String read(InputStream stream) throws Exception {

@@ -34,8 +34,21 @@ codes from logs, device storage, or network traffic.
 - Timestamp and nonce replay protection expected on the server.
 - Shared secret encrypted at rest with Android Keystore AES-GCM.
 - `SEND_SMS` permission only; no `READ_SMS` in the initial app.
+- Android sent-result callbacks before reporting terminal status.
+- Persistent status-report queue that retries failed gateway acknowledgements.
+- Bounded local recent-message ledger to reduce duplicate sends for repeated
+  message IDs.
 - Server-owned message templates and throttles.
 - No OTP codes in public dashboards, issue reports, or examples.
+
+## Delivery tradeoffs
+
+QasidRelay v0 cannot provide carrier-grade delivery receipts or strict
+exactly-once SMS delivery. The app reports `sent` after Android accepts all SMS
+parts through sent callbacks, queues status reports if the network is down, and
+remembers recent message IDs locally to avoid repeated sends. The server must
+still lease jobs atomically, make status handling idempotent, and avoid reusing a
+message ID for different SMS content.
 
 ## Operational guidance
 

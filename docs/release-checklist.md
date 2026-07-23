@@ -4,7 +4,8 @@ Use this before publishing an APK from GitHub Releases.
 
 ## Build
 
-- `./gradlew :app:assembleDebug`
+- `./gradlew :app:testDebugUnitTest --no-daemon`
+- `./gradlew :app:assembleDebug --no-daemon`
 - Confirm `app/build/outputs/apk/debug/app-debug.apk` installs on a test device.
 
 ## Security
@@ -14,18 +15,25 @@ Use this before publishing an APK from GitHub Releases.
 - Confirm `READ_SMS` is not requested unless a future release explicitly adds
   inbound SMS support.
 - Confirm cleartext traffic remains disabled for release builds.
+- Confirm request-signing tests pass and any new protocol examples avoid real
+  OTPs or phone numbers.
 
 ## Device smoke
 
 - Install APK on a dedicated Android phone with an authorized SIM.
-- Grant `SEND_SMS`.
+- Grant `SEND_SMS` and, on Android 13+, notification permission.
 - Configure gateway URL, device ID, and shared secret.
 - Queue one test transactional SMS on the server.
 - Confirm the phone sends exactly one SMS.
 - Confirm the server receives exactly one terminal status.
+- Force a temporary network failure after send and confirm the status report
+  queue retries before new messages are fetched.
+- Capture any vendor battery-optimization steps needed for stable foreground
+  service operation.
 
 ## Documentation
 
 - Update `README.md` status.
 - Update `docs/protocol.md` for any protocol changes.
+- Update `docs/real-device-testing.md` with device-specific findings.
 - Record known limitations in the GitHub release notes.

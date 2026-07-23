@@ -2,6 +2,7 @@ package org.greensvilla.qasidrelay;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import java.net.URI;
 
 final class GatewayConfig {
     static final String PREFS = "qasidrelay";
@@ -45,7 +46,23 @@ final class GatewayConfig {
     }
 
     boolean isReady() {
-        return baseUrl.startsWith("https://") && !deviceId.isEmpty() && !sharedSecret.isEmpty();
+        return validationError() == null;
+    }
+
+    String validationError() {
+        if (baseUrl.isEmpty()) {
+            return "Gateway base URL is required.";
+        }
+        if (!isHttpsOrigin(baseUrl)) {
+            return "Gateway base URL must be an HTTPS origin, for example https://relay.example.";
+        }
+        if (deviceId.isEmpty()) {
+            return "Device ID is required.";
+        }
+        if (sharedSecret.isEmpty()) {
+            return "Shared secret is required.";
+        }
+        return null;
     }
 
     private static String sanitizeBaseUrl(String value) {
@@ -54,5 +71,19 @@ final class GatewayConfig {
             sanitized = sanitized.substring(0, sanitized.length() - 1);
         }
         return sanitized;
+    }
+
+    private static boolean isHttpsOrigin(String value) {
+        try {
+            URI uri = URI.create(value);
+            return "https".equals(uri.getScheme()) &&
+                uri.getHost() != null &&
+                uri.getRawUserInfo() == null &&
+                (uri.getRawPath() == null || uri.getRawPath().isEmpty()) &&
+                uri.getRawQuery() == null &&
+                uri.getRawFragment() == null;
+        } catch (IllegalArgumentException error) {
+            return false;
+        }
     }
 }

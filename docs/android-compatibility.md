@@ -9,7 +9,7 @@ than the oldest possible Android versions.
 - Target SDK: API 35.
 - Language: Java.
 - UI: platform Android widgets.
-- SMS API: `SmsManager`.
+- SMS API: `SmsManager` with sent-result `PendingIntent` callbacks.
 
 ## Why API 23
 
@@ -25,6 +25,10 @@ after testing that exact device.
 
 - The app requires telephony messaging hardware.
 - The app requires the `SEND_SMS` permission.
+- Android 13 and newer may also require `POST_NOTIFICATIONS` for the foreground
+  relay notification to be visible.
 - Dual-SIM routing is not implemented in the first version.
 - Foreground service behavior varies across Android vendors; battery
   optimization settings may need manual adjustment.
+- `sent` status means Android accepted all SMS parts through sent callbacks; it
+  is not a carrier delivery receipt.
