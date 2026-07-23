@@ -26,6 +26,14 @@ final class RelayStatusStore {
             .apply();
     }
 
+    static void markManualRestartRequired(Context context, String detail) {
+        edit(context)
+            .putBoolean(KEY_SERVICE_RUNNING, false)
+            .putString(KEY_STATE, "Manual restart required")
+            .putString(KEY_DETAIL, detail)
+            .apply();
+    }
+
     static void markWaiting(Context context, String detail) {
         edit(context)
             .putString(KEY_STATE, "Waiting")
