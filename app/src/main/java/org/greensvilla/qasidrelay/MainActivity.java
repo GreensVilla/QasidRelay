@@ -310,7 +310,8 @@ public class MainActivity extends Activity {
 
     private void toggleMessaging() {
         GatewayConfig config = GatewayConfig.load(this);
-        if (config.messagingEnabled) {
+        RelayStatusStore.Snapshot status = RelayStatusStore.load(this);
+        if (config.messagingEnabled && status.serviceRunning) {
             disableMessaging("Messaging disabled. No new pending jobs will be fetched or sent.");
         } else {
             enableMessaging();
@@ -328,18 +329,27 @@ public class MainActivity extends Activity {
         }
 
         GatewayConfig.setMessagingEnabled(this, true);
-        startRelayService();
-        RelayStatusStore.markServiceRunning(this, true);
-        showNotice("Messaging enabled. Relay service starting.");
+        if (startRelayService()) {
+            RelayStatusStore.markServiceRunning(this, true);
+            showNotice("Messaging enabled. Relay service starting.");
+        }
         updateStatus();
     }
 
-    private void startRelayService() {
+    private boolean startRelayService() {
         Intent intent = new Intent(this, RelayService.class);
-        if (Build.VERSION.SDK_INT >= 26) {
-            startForegroundService(intent);
-        } else {
-            startService(intent);
+        try {
+            if (Build.VERSION.SDK_INT >= 26) {
+                startForegroundService(intent);
+            } else {
+                startService(intent);
+            }
+            return true;
+        } catch (RuntimeException error) {
+            String detail = "Could not start relay service: " + safeDetail(error);
+            RelayStatusStore.markManualRestartRequired(this, detail);
+            showNotice(detail);
+            return false;
         }
     }
 
@@ -369,19 +379,21 @@ public class MainActivity extends Activity {
         GatewayConfig config = GatewayConfig.load(this);
         RelayStatusStore.Snapshot status = RelayStatusStore.load(this);
         String validationError = config.validationError();
+        boolean serviceNeedsStart = config.messagingEnabled && !status.serviceRunning;
         if (configStatusText != null) {
             configStatusText.setText("Configuration: " + (validationError == null ? "Ready" : validationError));
         }
         if (messagingStatusText != null) {
-            messagingStatusText.setText("Messaging: " + (config.messagingEnabled ? "Enabled" : "Disabled"));
+            messagingStatusText.setText("Messaging: " + (config.messagingEnabled
+                ? (serviceNeedsStart ? "Enabled, service stopped" : "Enabled")
+                : "Disabled"));
         }
         if (permissionStatusText != null) {
             permissionStatusText.setText("Permissions: SMS " + granted(hasSmsPermission()) +
                 ", notifications " + granted(hasNotificationPermission()));
         }
         if (serviceStatusText != null) {
-            serviceStatusText.setText("Service: " + (status.serviceRunning ? status.state : "Stopped") +
-                "\n" + status.detail);
+            serviceStatusText.setText("Service: " + status.state + "\n" + status.detail);
         }
         if (pollStatusText != null) {
             pollStatusText.setText("Polling: last poll " + formatTime(status.lastPollAt) +
@@ -400,13 +412,25 @@ public class MainActivity extends Activity {
             queueStatusText.setText("Report queue: " + status.pendingReportCount + " pending");
         }
         if (messagingToggleButton != null) {
-            messagingToggleButton.setText(config.messagingEnabled ? "Disable messaging" : "Enable messaging");
-            messagingToggleButton.setBackgroundColor(config.messagingEnabled ? COLOR_DANGER : COLOR_ACCENT);
+            if (config.messagingEnabled && status.serviceRunning) {
+                messagingToggleButton.setText("Disable messaging");
+                messagingToggleButton.setBackgroundColor(COLOR_DANGER);
+            } else if (config.messagingEnabled) {
+                messagingToggleButton.setText("Start relay service");
+                messagingToggleButton.setBackgroundColor(COLOR_ACCENT);
+            } else {
+                messagingToggleButton.setText("Enable messaging");
+                messagingToggleButton.setBackgroundColor(COLOR_ACCENT);
+            }
         }
         if (messagingHelpText != null) {
-            messagingHelpText.setText(config.messagingEnabled
-                ? "Enabled: this phone may fetch pending jobs and submit SMS through the SIM."
-                : "Disabled: this phone will not fetch pending jobs or send SMS.");
+            if (config.messagingEnabled && status.serviceRunning) {
+                messagingHelpText.setText("Enabled: this phone may fetch pending jobs and submit SMS through the SIM.");
+            } else if (config.messagingEnabled) {
+                messagingHelpText.setText("Enabled but not running: tap Start relay service to resume polling after reboot, app update, or service stop.");
+            } else {
+                messagingHelpText.setText("Disabled: this phone will not fetch pending jobs or send SMS.");
+            }
         }
         if (secretHelpText != null) {
             secretHelpText.setText(config.sharedSecret.isEmpty()
@@ -424,6 +448,14 @@ public class MainActivity extends Activity {
             return "never";
         }
         return DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM).format(new Date(timestampMillis));
+    }
+
+    private String safeDetail(RuntimeException error) {
+        if (error == null) {
+            return "unknown";
+        }
+        String message = error.getMessage();
+        return error.getClass().getSimpleName() + (message == null || message.isEmpty() ? "" : ": " + message);
     }
 
     private void showNotice(String message) {
