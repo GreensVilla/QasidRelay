@@ -10,6 +10,8 @@ than the oldest possible Android versions.
 - Language: Java.
 - UI: platform Android widgets.
 - SMS API: `SmsManager` with sent-result `PendingIntent` callbacks.
+- Operator control: messaging starts disabled and can be enabled or disabled
+  from the phone UI.
 
 ## Why API 23
 
@@ -30,5 +32,7 @@ after testing that exact device.
 - Dual-SIM routing is not implemented in the first version.
 - Foreground service behavior varies across Android vendors; battery
   optimization settings may need manual adjustment.
+- Disabling messaging stops fetching new jobs and stops the foreground relay
+  service. Already-submitted Android SMS callbacks may still complete.
 - `sent` status means Android accepted all SMS parts through sent callbacks; it
   is not a carrier delivery receipt.

@@ -12,7 +12,7 @@ messaging, scraping, spam, or bypassing carrier/provider rules.
 
 ## Status
 
-Release target: `0.1.0`.
+Release line: `0.1.x` phone-local Android client.
 
 The Android app has a working polling baseline, HMAC-signed requests,
 Keystore-backed shared-secret storage, local status reporting, and
@@ -48,6 +48,7 @@ need a public IP address and should not expose an inbound HTTP server.
 - Java-based Android app.
 - Minimum SDK: Android 6.0 / API 23.
 - Direct SMS sending through `SmsManager`.
+- Phone-local messaging enable/disable control for operators.
 - Android sent-result callbacks before terminal status reporting.
 - Persistent retry queue for status reports.
 - Polling-only network model.
@@ -63,6 +64,7 @@ need a public IP address and should not expose an inbound HTTP server.
 ```text
 app/                  Android app module
 docs/                 protocol, threat model, testing, and compatibility notes
+TODO.impl/            deferred implementation tracks
 .github/              CI, issue templates, and PR template
 ```
 

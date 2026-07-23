@@ -35,6 +35,7 @@ This working pass adds:
 - Android SMS sent callbacks before queuing terminal status
 - persistent retry queue for status reports
 - bounded local recent-message ledger to reduce duplicate sends
+- phone-local messaging enable/disable control for operators
 - signer unit tests are configured for CI through `:app:testDebugUnitTest`
 - status screen shows configuration, permissions, service state, last poll, last
   delivery event, and pending report count
@@ -68,6 +69,19 @@ Merged main CI evidence:
 - `static`: passed
 - `android`: passed, including `:app:testDebugUnitTest` and
   `:app:assembleDebug`
+
+Release evidence:
+
+- GitHub prerelease `v0.1.0`
+- release URL: <https://github.com/GreensVilla/QasidRelay/releases/tag/v0.1.0>
+- final release CI: GitHub Actions run `30004375738`
+- release commit `7e0e1ed6085aeddd504e1979c040158f9722cd95`
+- `static`: passed
+- `android`: passed, including `:app:testDebugUnitTest` and
+  `:app:assembleDebug`
+
+Current follow-up branch targets `v0.1.1` with phone-local messaging
+enable/disable control and deferred implementation TODOs.
 
 ## Protocol direction
 
@@ -111,20 +125,20 @@ Relevant docs:
 - [`docs/android-compatibility.md`](docs/android-compatibility.md)
 - [`docs/real-device-testing.md`](docs/real-device-testing.md)
 - [`docs/server-integration.md`](docs/server-integration.md)
+- [`TODO.impl/README.md`](TODO.impl/README.md)
 
 ## Next QasidRelay tasks
 
 1. Test APK on a real Android phone with a SIM.
-2. Run the updated CI workflow after a JDK/Android SDK are available locally or
-   in GitHub Actions.
-3. Add a minimal reference server endpoint or contract tests.
-4. Add Android instrumentation coverage for `SecureSecretStore` where practical.
-5. Improve foreground-service resilience:
+2. Add Android instrumentation coverage for `SecureSecretStore` where practical.
+3. Improve foreground-service resilience:
    - boot/restart behavior;
    - battery-optimization guidance from real devices;
    - vendor-specific restrictions.
-6. Add dual-SIM selection only after testing the target phone.
-7. Decide client-package naming conventions:
+4. Add a minimal reference gateway or contract tests when moving beyond the
+   phone-local `0.1.x` line.
+5. Add dual-SIM selection only after testing the target phone.
+6. Decide client-package naming conventions:
    - proposed by owner: `QasidRelay-rb`, `QasidRelay-js`,
      `QasidRelay-rust`, `QasidRelay-python`.
    - Keep protocol docs authoritative so client repos stay consistent.

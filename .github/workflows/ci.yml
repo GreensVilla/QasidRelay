@@ -12,6 +12,7 @@ jobs:
       - name: Check required OSS files
         run: |
           test -f README.md
+          test -f CHANGELOG.md
           test -f LICENSE
           test -f SECURITY.md
           test -f CONTRIBUTING.md
@@ -22,6 +23,7 @@ jobs:
           test -f docs/release-checklist.md
           test -f docs/real-device-testing.md
           test -f docs/server-integration.md
+          test -f TODO.impl/README.md
           test -f app/src/main/AndroidManifest.xml
       - name: Check forbidden placeholders
         run: |

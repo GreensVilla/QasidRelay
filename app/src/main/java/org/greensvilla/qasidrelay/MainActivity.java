@@ -27,6 +27,7 @@ public class MainActivity extends Activity {
     private static final int COLOR_MUTED = 0xFF64748B;
     private static final int COLOR_BORDER = 0xFFE2E8F0;
     private static final int COLOR_ACCENT = 0xFF2563EB;
+    private static final int COLOR_DANGER = 0xFFB91C1C;
 
     private final Handler refreshHandler = new Handler(Looper.getMainLooper());
     private final Runnable refreshRunnable = new Runnable() {
@@ -44,11 +45,14 @@ public class MainActivity extends Activity {
     private TextView secretHelpText;
     private TextView noticeText;
     private TextView configStatusText;
+    private TextView messagingStatusText;
     private TextView permissionStatusText;
     private TextView serviceStatusText;
     private TextView pollStatusText;
     private TextView messageStatusText;
     private TextView queueStatusText;
+    private Button messagingToggleButton;
+    private TextView messagingHelpText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -106,6 +110,7 @@ public class MainActivity extends Activity {
         LinearLayout statusPanel = panel();
         statusPanel.addView(sectionTitle("Relay status"));
         configStatusText = statusRow(statusPanel, "Configuration");
+        messagingStatusText = statusRow(statusPanel, "Messaging");
         permissionStatusText = statusRow(statusPanel, "Permissions");
         serviceStatusText = statusRow(statusPanel, "Service");
         pollStatusText = statusRow(statusPanel, "Polling");
@@ -138,21 +143,22 @@ public class MainActivity extends Activity {
         layout.addView(configPanel);
 
         LinearLayout controlPanel = panel();
-        controlPanel.addView(sectionTitle("Device controls"));
+        controlPanel.addView(sectionTitle("Messaging control"));
         Button permissionButton = secondaryButton("Grant required permissions");
         permissionButton.setOnClickListener(view -> requestRequiredPermissions());
         controlPanel.addView(permissionButton);
 
-        LinearLayout buttonRow = new LinearLayout(this);
-        buttonRow.setOrientation(LinearLayout.HORIZONTAL);
-        buttonRow.setPadding(0, dp(8), 0, 0);
-        Button startButton = primaryButton("Start relay");
-        startButton.setOnClickListener(view -> startRelay());
-        Button stopButton = secondaryButton("Stop relay");
+        messagingToggleButton = primaryButton("Enable messaging");
+        messagingToggleButton.setOnClickListener(view -> toggleMessaging());
+        controlPanel.addView(messagingToggleButton);
+
+        Button stopButton = secondaryButton("Stop foreground service");
         stopButton.setOnClickListener(view -> stopRelay());
-        buttonRow.addView(startButton, weightedButtonParams());
-        buttonRow.addView(stopButton, weightedButtonParams());
-        controlPanel.addView(buttonRow);
+        controlPanel.addView(stopButton);
+
+        messagingHelpText = helper("");
+        messagingHelpText.setPadding(0, dp(10), 0, 0);
+        controlPanel.addView(messagingHelpText);
 
         noticeText = helper("");
         noticeText.setPadding(0, dp(12), 0, 0);
@@ -245,16 +251,6 @@ public class MainActivity extends Activity {
         return button;
     }
 
-    private LinearLayout.LayoutParams weightedButtonParams() {
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-            0,
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            1f
-        );
-        params.setMargins(dp(4), 0, dp(4), 0);
-        return params;
-    }
-
     private boolean saveConfig(boolean showToast) {
         GatewayConfig existing = GatewayConfig.load(this);
         String providedSecret = secretInput.getText().toString().trim();
@@ -263,7 +259,8 @@ public class MainActivity extends Activity {
             baseUrlInput.getText().toString(),
             deviceIdInput.getText().toString(),
             secret,
-            parsePollSeconds(pollSecondsInput.getText().toString())
+            parsePollSeconds(pollSecondsInput.getText().toString()),
+            existing.messagingEnabled
         );
 
         String validationError = config.validationError();
@@ -311,7 +308,16 @@ public class MainActivity extends Activity {
         updateStatus();
     }
 
-    private void startRelay() {
+    private void toggleMessaging() {
+        GatewayConfig config = GatewayConfig.load(this);
+        if (config.messagingEnabled) {
+            disableMessaging("Messaging disabled. No new pending jobs will be fetched or sent.");
+        } else {
+            enableMessaging();
+        }
+    }
+
+    private void enableMessaging() {
         if (!saveConfig(false)) {
             return;
         }
@@ -321,21 +327,31 @@ public class MainActivity extends Activity {
             return;
         }
 
+        GatewayConfig.setMessagingEnabled(this, true);
+        startRelayService();
+        RelayStatusStore.markServiceRunning(this, true);
+        showNotice("Messaging enabled. Relay service starting.");
+        updateStatus();
+    }
+
+    private void startRelayService() {
         Intent intent = new Intent(this, RelayService.class);
         if (Build.VERSION.SDK_INT >= 26) {
             startForegroundService(intent);
         } else {
             startService(intent);
         }
-        RelayStatusStore.markServiceRunning(this, true);
-        showNotice("Relay service starting.");
-        updateStatus();
     }
 
     private void stopRelay() {
+        disableMessaging("Messaging disabled and foreground service stopped.");
+    }
+
+    private void disableMessaging(String notice) {
+        GatewayConfig.setMessagingEnabled(this, false);
         stopService(new Intent(this, RelayService.class));
         RelayStatusStore.markServiceRunning(this, false);
-        showNotice("Relay service stopped.");
+        showNotice(notice);
         updateStatus();
     }
 
@@ -355,6 +371,9 @@ public class MainActivity extends Activity {
         String validationError = config.validationError();
         if (configStatusText != null) {
             configStatusText.setText("Configuration: " + (validationError == null ? "Ready" : validationError));
+        }
+        if (messagingStatusText != null) {
+            messagingStatusText.setText("Messaging: " + (config.messagingEnabled ? "Enabled" : "Disabled"));
         }
         if (permissionStatusText != null) {
             permissionStatusText.setText("Permissions: SMS " + granted(hasSmsPermission()) +
@@ -379,6 +398,15 @@ public class MainActivity extends Activity {
         }
         if (queueStatusText != null) {
             queueStatusText.setText("Report queue: " + status.pendingReportCount + " pending");
+        }
+        if (messagingToggleButton != null) {
+            messagingToggleButton.setText(config.messagingEnabled ? "Disable messaging" : "Enable messaging");
+            messagingToggleButton.setBackgroundColor(config.messagingEnabled ? COLOR_DANGER : COLOR_ACCENT);
+        }
+        if (messagingHelpText != null) {
+            messagingHelpText.setText(config.messagingEnabled
+                ? "Enabled: this phone may fetch pending jobs and submit SMS through the SIM."
+                : "Disabled: this phone will not fetch pending jobs or send SMS.");
         }
         if (secretHelpText != null) {
             secretHelpText.setText(config.sharedSecret.isEmpty()
