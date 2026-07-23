@@ -29,11 +29,16 @@ Open QasidRelay on the phone, grant required permissions, then configure:
 The shared secret field is intentionally blank after saving. Leave it blank to
 keep the stored Keystore-encrypted secret, or enter a new value to rotate it.
 
+Messaging starts disabled. Use the `Enable messaging` button only after the
+gateway settings are correct and the test recipient is controlled by the tester.
+Use `Disable messaging` or `Stop foreground service` to stop fetching new jobs
+and sending SMS from the phone.
+
 ## Smoke test
 
 1. Confirm the status screen shows configuration ready and SMS permission
    granted.
-2. Start the relay and confirm the foreground notification appears.
+2. Tap `Enable messaging` and confirm the foreground notification appears.
 3. Queue one transactional test message on the gateway using a synthetic message
    ID and a controlled destination.
 4. Confirm the device sends exactly one SMS.
@@ -46,6 +51,8 @@ keep the stored Keystore-encrypted secret, or enter a new value to rotate it.
 - Stop network access after Android sends the SMS but before the status report
   reaches the gateway. The app should show a pending report and should flush it
   after connectivity returns.
+- Tap `Disable messaging` and confirm the gateway does not receive further
+  pending-message fetches from the phone.
 - Test with no mobile service or airplane mode. The gateway should eventually
   receive `failed` with an Android SMS result detail.
 - Restart the app while a report is pending. The next service loop should retry

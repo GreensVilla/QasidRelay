@@ -56,6 +56,11 @@ public class RelayService extends Service {
         try {
             while (running) {
                 GatewayConfig config = GatewayConfig.load(this);
+                if (!config.messagingEnabled) {
+                    RelayStatusStore.markWaiting(this, "Messaging is disabled by the operator; pending jobs will not be fetched.");
+                    sleep(10);
+                    continue;
+                }
                 String validationError = config.validationError();
                 if (validationError != null) {
                     RelayStatusStore.markWaiting(this, validationError);

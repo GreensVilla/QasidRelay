@@ -23,9 +23,11 @@ Use this before publishing an APK from GitHub Releases.
 - Install APK on a dedicated Android phone with an authorized SIM.
 - Grant `SEND_SMS` and, on Android 13+, notification permission.
 - Configure gateway URL, device ID, and shared secret.
+- Confirm messaging is disabled until the operator taps `Enable messaging`.
 - Queue one test transactional SMS on the server.
 - Confirm the phone sends exactly one SMS.
 - Confirm the server receives exactly one terminal status.
+- Tap `Disable messaging` and confirm the phone stops fetching new jobs.
 - Force a temporary network failure after send and confirm the status report
   queue retries before new messages are fetched.
 - Capture any vendor battery-optimization steps needed for stable foreground

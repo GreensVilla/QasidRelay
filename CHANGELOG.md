@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1 - 2026-07-23
+
+### Added
+
+- Phone-local messaging enable/disable control.
+- `TODO.impl/` implementation backlog for deferred reference gateway,
+  deployment, signed APK, and GreensVilla integration tracks.
+
 ## 0.1.0 - 2026-07-23
 
 Initial OSS/private-pilot Android relay release candidate.

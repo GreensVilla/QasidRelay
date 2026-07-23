@@ -10,17 +10,20 @@ final class GatewayConfig {
     private static final String KEY_DEVICE_ID = "device_id";
     private static final String KEY_SHARED_SECRET = "shared_secret";
     private static final String KEY_POLL_SECONDS = "poll_seconds";
+    private static final String KEY_MESSAGING_ENABLED = "messaging_enabled";
 
     final String baseUrl;
     final String deviceId;
     final String sharedSecret;
     final int pollSeconds;
+    final boolean messagingEnabled;
 
-    GatewayConfig(String baseUrl, String deviceId, String sharedSecret, int pollSeconds) {
+    GatewayConfig(String baseUrl, String deviceId, String sharedSecret, int pollSeconds, boolean messagingEnabled) {
         this.baseUrl = sanitizeBaseUrl(baseUrl);
         this.deviceId = deviceId == null ? "" : deviceId.trim();
         this.sharedSecret = sharedSecret == null ? "" : sharedSecret.trim();
         this.pollSeconds = Math.max(5, pollSeconds);
+        this.messagingEnabled = messagingEnabled;
     }
 
     static GatewayConfig load(Context context) {
@@ -30,7 +33,8 @@ final class GatewayConfig {
             prefs.getString(KEY_BASE_URL, ""),
             prefs.getString(KEY_DEVICE_ID, ""),
             secretStore.load(prefs.getString(KEY_SHARED_SECRET, "")),
-            prefs.getInt(KEY_POLL_SECONDS, 10)
+            prefs.getInt(KEY_POLL_SECONDS, 10),
+            prefs.getBoolean(KEY_MESSAGING_ENABLED, false)
         );
     }
 
@@ -42,6 +46,14 @@ final class GatewayConfig {
             .putString(KEY_DEVICE_ID, deviceId)
             .putString(KEY_SHARED_SECRET, secretStore.save(sharedSecret))
             .putInt(KEY_POLL_SECONDS, pollSeconds)
+            .putBoolean(KEY_MESSAGING_ENABLED, messagingEnabled)
+            .apply();
+    }
+
+    static void setMessagingEnabled(Context context, boolean enabled) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_MESSAGING_ENABLED, enabled)
             .apply();
     }
 
