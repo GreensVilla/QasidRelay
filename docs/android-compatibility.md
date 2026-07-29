@@ -49,6 +49,9 @@ post-reboot SMS sending.
 - The app requires the `SEND_SMS` permission.
 - Setup QR scanning depends on the device having a camera/QR scanner that can
   open `qasidrelay://setup` links. Manual field entry remains supported.
+- Some Android Keystore implementations reject caller-provided AES-GCM IVs when
+  randomized encryption is required. QasidRelay lets Android Keystore generate
+  the IV before storing the encrypted private relay key.
 - Android 13 and newer may also require `POST_NOTIFICATIONS` for the foreground
   relay notification to be visible.
 - Dual-SIM routing is not implemented in the first version.

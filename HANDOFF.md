@@ -144,6 +144,12 @@ Current release follow-up:
     higher `versionCode` should update in place.
   - signing note: signing material is stored in GitHub Actions secrets; no
     signing key or password is committed to the repository.
+- Android Keystore encryption fix is needed after field testing showed the app
+  error `Could not encrypt shared secret with Android Keystore` when saving the
+  private relay key. The fix is to let Android Keystore generate the AES-GCM IV
+  during encryption, then store that IV with the ciphertext. Release as a signed
+  APK with a higher `versionCode` than `v0.1.6` so installed signed builds can
+  update in place.
 
 ## Protocol direction
 

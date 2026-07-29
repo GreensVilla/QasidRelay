@@ -5,7 +5,6 @@ import android.security.keystore.KeyProperties;
 import android.util.Base64;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
-import java.security.SecureRandom;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -25,9 +24,11 @@ final class SecureSecretStore {
 
         try {
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-            byte[] iv = new byte[IV_BYTES];
-            new SecureRandom().nextBytes(iv);
-            cipher.init(Cipher.ENCRYPT_MODE, key(), new GCMParameterSpec(TAG_BITS, iv));
+            cipher.init(Cipher.ENCRYPT_MODE, key());
+            byte[] iv = cipher.getIV();
+            if (iv == null || iv.length != IV_BYTES) {
+                throw new IllegalStateException("Android Keystore did not provide a valid AES-GCM IV");
+            }
             byte[] encrypted = cipher.doFinal(plaintext.trim().getBytes(StandardCharsets.UTF_8));
             byte[] combined = new byte[iv.length + encrypted.length];
             System.arraycopy(iv, 0, combined, 0, iv.length);
