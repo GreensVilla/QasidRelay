@@ -89,8 +89,16 @@ Current release follow-up:
 - `v0.1.1` adds phone-local messaging enable/disable control and deferred
   implementation TODOs.
 - `v0.1.2` targets downloadable debug APK artifacts from GitHub Actions.
-- `v0.1.3` should be cut from this pass after CI verifies the
-  `remoteMessaging` and stale-attempt recovery changes.
+- `v0.1.3` is published as a debug prerelease:
+  - release URL: <https://github.com/GreensVilla/QasidRelay/releases/tag/v0.1.3>
+  - release commit: `b66fba271d4c2677e032e518f126e08ee25e0cf2`
+  - release CI: GitHub Actions run `30432200987`
+  - `static`: passed
+  - `android`: passed, including `:app:testDebugUnitTest`,
+    `:app:assembleDebug`, and debug APK artifact upload
+  - asset: `QasidRelay-v0.1.3-debug.apk`
+  - asset SHA-256:
+    `345c681ebedf3a3befc7e05048e0926b0d6568ab012de11771491c4ee6706def`
 
 ## Protocol direction
 
@@ -138,17 +146,16 @@ Relevant docs:
 
 ## Next QasidRelay tasks
 
-1. Cut and publish the `v0.1.3` debug prerelease after GitHub Actions passes.
-2. Test the APK on a real Android phone with an authorized SIM and a controlled
-   recipient.
-3. Run `connectedDebugAndroidTest` on a real device or emulator and record the
+1. Test the `v0.1.3` APK on a real Android phone with an authorized SIM and a
+   controlled recipient.
+2. Run `connectedDebugAndroidTest` on a real device or emulator and record the
    Android Keystore evidence.
-4. Implement or deploy the minimal HTTPS/HMAC reference gateway before routing
+3. Implement or deploy the minimal HTTPS/HMAC reference gateway before routing
    real GreensVilla SMS traffic through QasidRelay.
-5. Add battery-optimization guidance from real devices and vendor-specific
+4. Add battery-optimization guidance from real devices and vendor-specific
    restrictions discovered during smoke testing.
-6. Add dual-SIM selection only after testing the target phone.
-7. Decide client-package naming conventions:
+5. Add dual-SIM selection only after testing the target phone.
+6. Decide client-package naming conventions:
    - proposed by owner: `QasidRelay-rb`, `QasidRelay-js`,
      `QasidRelay-rust`, `QasidRelay-python`.
    - Keep protocol docs authoritative so client repos stay consistent.
