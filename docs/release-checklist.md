@@ -6,14 +6,23 @@ Use this before publishing an APK from GitHub Releases.
 
 - `./gradlew :app:testDebugUnitTest --no-daemon`
 - `./gradlew :app:assembleDebug --no-daemon`
-- Confirm `app/build/outputs/apk/debug/app-debug.apk` installs on a test device.
+- `./gradlew :app:assembleRelease --no-daemon` with release signing env vars
+  configured.
+- Confirm `app/build/outputs/apk/release/app-release.apk` installs on a test
+  device.
+- Confirm a later signed APK with a higher `versionCode` updates the installed
+  app without uninstalling.
 - Confirm GitHub Actions uploaded the `qasidrelay-debug-apk` artifact.
-- If attaching a debug APK to a prerelease, label it clearly as debug-signed and
-  testing-only.
+- Confirm GitHub Actions uploaded the `qasidrelay-signed-release-apk` artifact
+  before attaching it to a release.
+- Do not attach debug APKs for normal operator testing once signed APKs are
+  available.
 
 ## Security
 
 - Confirm no real private relay key/shared secret is committed.
+- Confirm no signing keystore, signing password, or exported signing-key backup
+  is committed.
 - Confirm no real phone number or OTP appears in examples or screenshots.
 - Confirm `READ_SMS` is not requested unless a future release explicitly adds
   inbound SMS support.
@@ -46,4 +55,4 @@ Use this before publishing an APK from GitHub Releases.
 - Update `docs/protocol.md` for any protocol changes.
 - Update `docs/real-device-testing.md` with device-specific findings.
 - Record known limitations in the GitHub release notes.
-- Do not present a debug APK as a production-signed release APK.
+- Record the signed APK SHA-256 in the GitHub release notes.
