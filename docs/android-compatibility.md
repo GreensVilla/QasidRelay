@@ -12,6 +12,8 @@ than the oldest possible Android versions.
 - SMS API: `SmsManager` with sent-result `PendingIntent` callbacks.
 - Operator control: messaging starts disabled and can be enabled or disabled
   from the phone UI.
+- Setup QR support uses Android deep links opened by the phone camera or QR
+  scanner; QasidRelay itself does not request camera permission.
 
 ## Why API 23
 
@@ -45,6 +47,8 @@ post-reboot SMS sending.
 
 - The app requires telephony messaging hardware.
 - The app requires the `SEND_SMS` permission.
+- Setup QR scanning depends on the device having a camera/QR scanner that can
+  open `qasidrelay://setup` links. Manual field entry remains supported.
 - Android 13 and newer may also require `POST_NOTIFICATIONS` for the foreground
   relay notification to be visible.
 - Dual-SIM routing is not implemented in the first version.

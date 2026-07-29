@@ -19,11 +19,17 @@ data, real OTPs, or production recipient lists.
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Open QasidRelay on the phone, grant required permissions, then configure:
+Open QasidRelay on the phone, grant required permissions, then configure by
+either scanning the gateway's one-time setup QR or entering the fields manually:
 
 - server URL, for example `https://relay.example`;
 - phone name, for example `qasid-device-01`, matching the server device ID;
 - private relay key from the test gateway.
+
+When scanning a setup QR, use the phone camera or a QR scanner and open the
+`qasidrelay://setup` link in QasidRelay. The app pre-fills the server URL, phone
+name, and private relay key; review the fields, then tap `Save configuration`.
+Treat the QR and link as secret because they contain the private relay key.
 
 The private relay key field is intentionally blank after saving. Leave it blank
 to keep the stored Keystore-encrypted key, or enter a new value to rotate it.
@@ -61,6 +67,7 @@ phone.
   attempt closed and queue a terminal `failed` status before sending any new
   job with the same message ID.
 - Confirm the app never requests `READ_SMS`.
+- Confirm the app never requests camera permission for setup QR handling.
 - Confirm cleartext HTTP gateway URLs are rejected by the app.
 
 ## Reboot and app-update checks

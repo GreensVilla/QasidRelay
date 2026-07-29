@@ -29,6 +29,16 @@ Store one row per enrolled device:
 Secrets should be generated server-side, shown once to the operator, and rotated
 by issuing a new value that the operator enters into the Android app.
 
+Servers may also generate a one-time setup QR/deep link for operator setup:
+
+```text
+qasidrelay://setup?server_url=<url-encoded HTTPS origin>&phone_name=<url-encoded device ID>&private_relay_key=<url-encoded shared secret>
+```
+
+The QR/link contains the shared secret. Generate it locally in the trusted
+server UI, show it only during create/rotate, never send it through third-party
+QR services, and rotate the device secret if the QR/link is exposed.
+
 ## Message lifecycle
 
 Use server-side state to prevent duplicate SMS:

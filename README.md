@@ -16,12 +16,13 @@ Release line: `0.1.x` phone-local Android client.
 
 Latest debug prerelease:
 [`v0.1.4`](https://github.com/GreensVilla/QasidRelay/releases/tag/v0.1.4).
+The next app build is `0.1.5`, adding setup QR/deep-link support.
 
 The Android app has a working polling baseline, HMAC-signed requests,
-Keystore-backed private relay key storage, simplified operator setup, local
-status reporting, Android sent callbacks, manual restart handling, and
-request-signing unit tests. The next major milestone is real-device validation
-against a test gateway.
+Keystore-backed private relay key storage, simplified operator setup with
+optional setup QR/deep-link prefill, local status reporting, Android sent
+callbacks, manual restart handling, and request-signing unit tests. The next
+major milestone is real-device validation against a test gateway.
 
 ## Intended use cases
 
@@ -53,6 +54,7 @@ need a public IP address and should not expose an inbound HTTP server.
 - Minimum SDK: Android 6.0 / API 23.
 - Direct SMS sending through `SmsManager`.
 - Phone-local messaging enable/disable control for operators.
+- Optional setup deep link: `qasidrelay://setup`.
 - Android sent-result callbacks before terminal status reporting.
 - Persistent retry queue for status reports.
 - Bounded recovery for stale SMS attempts that never receive Android callbacks.
@@ -61,6 +63,8 @@ need a public IP address and should not expose an inbound HTTP server.
 - HTTPS-first configuration.
 - HMAC-signed requests.
 - Cleartext HTTP disabled by Android network security config.
+- No camera permission; setup QR scanning is handled by the phone camera or QR
+  scanner, then opened in QasidRelay as a deep link.
 - No Android `READ_SMS` permission.
 - No inbound SMS support in the initial release.
 - No bulk-marketing features.
