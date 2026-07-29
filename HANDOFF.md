@@ -127,6 +127,23 @@ Current release follow-up:
     Scanning a trusted gateway QR pre-fills server URL, phone name, and private
     relay key without enabling messaging automatically. No camera permission or
     QR-scanning dependency was added.
+- `v0.1.6` is published as the first stable-signed prerelease:
+  - release URL: <https://github.com/GreensVilla/QasidRelay/releases/tag/v0.1.6>
+  - release commit: `ddda5d8a1b043f2272518a78044ea545dd72d78d`
+  - release PR: <https://github.com/GreensVilla/QasidRelay/pull/13>
+  - release CI: GitHub Actions run `30459630711`
+  - `static`: passed
+  - `android`: passed, including `:app:testDebugUnitTest`,
+    `:app:assembleDebug`, signed release APK build, and signed APK artifact
+    upload
+  - asset: `QasidRelay-v0.1.6-signed.apk`
+  - asset SHA-256:
+    `8c3c73d459ff936b63baddac5d628e3f4d5e34d1e2b04bdf472bed08aac8f21b`
+  - install note: devices with earlier CI/debug APKs, including `v0.1.5`, must
+    uninstall once before installing `v0.1.6`; later same-key signed builds with
+    higher `versionCode` should update in place.
+  - signing note: signing material is stored in GitHub Actions secrets; no
+    signing key or password is committed to the repository.
 
 ## Protocol direction
 
@@ -174,8 +191,10 @@ Relevant docs:
 
 ## Next QasidRelay tasks
 
-1. Test the `v0.1.5` APK on a real Android phone with an authorized SIM and a
-   controlled recipient.
+1. Install and test the `v0.1.6` signed APK on a real Android phone with an
+   authorized SIM and a controlled recipient. If a previous debug APK is
+   installed, uninstall it once first; future signed APKs should update in
+   place.
 2. Run `connectedDebugAndroidTest` on a real device or emulator and record the
    Android Keystore evidence.
 3. Implement or deploy the minimal HTTPS/HMAC reference gateway before routing
