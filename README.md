@@ -15,12 +15,13 @@ messaging, scraping, spam, or bypassing carrier/provider rules.
 Release line: `0.1.x` phone-local Android client.
 
 Latest debug prerelease:
-[`v0.1.3`](https://github.com/GreensVilla/QasidRelay/releases/tag/v0.1.3).
+[`v0.1.4`](https://github.com/GreensVilla/QasidRelay/releases/tag/v0.1.4).
 
 The Android app has a working polling baseline, HMAC-signed requests,
-Keystore-backed shared-secret storage, local status reporting, Android sent
-callbacks, manual restart handling, and request-signing unit tests. The next
-major milestone is real-device validation against a test gateway.
+Keystore-backed private relay key storage, simplified operator setup, local
+status reporting, Android sent callbacks, manual restart handling, and
+request-signing unit tests. The next major milestone is real-device validation
+against a test gateway.
 
 ## Intended use cases
 

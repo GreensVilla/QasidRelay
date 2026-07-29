@@ -99,6 +99,19 @@ Current release follow-up:
   - asset: `QasidRelay-v0.1.3-debug.apk`
   - asset SHA-256:
     `345c681ebedf3a3befc7e05048e0926b0d6568ab012de11771491c4ee6706def`
+- `v0.1.4` is published as a debug prerelease:
+  - release URL: <https://github.com/GreensVilla/QasidRelay/releases/tag/v0.1.4>
+  - release commit: `87e3161e8ef073bbd254f72323ec97b5e5a4bbda`
+  - release CI: GitHub Actions run `30448230586`
+  - `static`: passed
+  - `android`: passed, including `:app:testDebugUnitTest`,
+    `:app:assembleDebug`, and debug APK artifact upload
+  - asset: `QasidRelay-v0.1.4-debug.apk`
+  - asset SHA-256:
+    `76accc0809c1b3ac9efac279e20a04033009b5fc84da476032652ce13bf20ceb`
+  - notable change: setup now asks only for server URL, phone name, and private
+    relay key; poll interval and redundant stop-service controls were removed
+    from the main UI.
 
 ## Protocol direction
 
@@ -146,7 +159,7 @@ Relevant docs:
 
 ## Next QasidRelay tasks
 
-1. Test the `v0.1.3` APK on a real Android phone with an authorized SIM and a
+1. Test the `v0.1.4` APK on a real Android phone with an authorized SIM and a
    controlled recipient.
 2. Run `connectedDebugAndroidTest` on a real device or emulator and record the
    Android Keystore evidence.
