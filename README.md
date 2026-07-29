@@ -15,8 +15,7 @@ messaging, scraping, spam, or bypassing carrier/provider rules.
 Release line: `0.1.x` phone-local Android client.
 
 Latest debug prerelease:
-[`v0.1.4`](https://github.com/GreensVilla/QasidRelay/releases/tag/v0.1.4).
-The next app build is `0.1.5`, adding setup QR/deep-link support.
+[`v0.1.5`](https://github.com/GreensVilla/QasidRelay/releases/tag/v0.1.5).
 
 The Android app has a working polling baseline, HMAC-signed requests,
 Keystore-backed private relay key storage, simplified operator setup with

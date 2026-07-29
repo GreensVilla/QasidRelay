@@ -112,6 +112,21 @@ Current release follow-up:
   - notable change: setup now asks only for server URL, phone name, and private
     relay key; poll interval and redundant stop-service controls were removed
     from the main UI.
+- `v0.1.5` is published as a debug prerelease:
+  - release URL: <https://github.com/GreensVilla/QasidRelay/releases/tag/v0.1.5>
+  - release commit: `970e8d5e7c50fa36077fee7a06aa0a7d566353ea`
+  - release PR: <https://github.com/GreensVilla/QasidRelay/pull/11>
+  - release CI: GitHub Actions run `30456714288`
+  - `static`: passed
+  - `android`: passed, including `:app:testDebugUnitTest`,
+    `:app:assembleDebug`, and debug APK artifact upload
+  - asset: `QasidRelay-v0.1.5-debug.apk`
+  - asset SHA-256:
+    `28ff57cacdeb71a3f24406166017ae80cdb50d0a0c8e068fbafd8ac027457aa4`
+  - notable change: setup QR/deep-link support for `qasidrelay://setup`.
+    Scanning a trusted gateway QR pre-fills server URL, phone name, and private
+    relay key without enabling messaging automatically. No camera permission or
+    QR-scanning dependency was added.
 
 ## Protocol direction
 
@@ -159,7 +174,7 @@ Relevant docs:
 
 ## Next QasidRelay tasks
 
-1. Test the `v0.1.4` APK on a real Android phone with an authorized SIM and a
+1. Test the `v0.1.5` APK on a real Android phone with an authorized SIM and a
    controlled recipient.
 2. Run `connectedDebugAndroidTest` on a real device or emulator and record the
    Android Keystore evidence.
