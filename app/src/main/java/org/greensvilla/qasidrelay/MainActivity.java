@@ -57,6 +57,14 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         render();
+        applySetupIntent(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        applySetupIntent(intent);
     }
 
     @Override
@@ -277,6 +285,30 @@ public class MainActivity extends Activity {
             showNotice(error.getMessage());
             return false;
         }
+    }
+
+    private void applySetupIntent(Intent intent) {
+        if (intent == null) {
+            return;
+        }
+
+        SetupLink setupLink = SetupLink.parse(intent.getDataString());
+        if (setupLink == null) {
+            return;
+        }
+
+        GatewayConfig config = setupLink.toGatewayConfig(GatewayConfig.load(this));
+        baseUrlInput.setText(config.baseUrl);
+        deviceIdInput.setText(config.deviceId);
+        secretInput.setText(config.sharedSecret);
+
+        String validationError = config.validationError();
+        if (validationError == null) {
+            showNotice("Setup QR loaded. Review the fields, then tap Save configuration. Messaging stays disabled until you enable it.");
+        } else {
+            showNotice("Setup QR loaded, but the configuration needs review: " + validationError);
+        }
+        updateStatus();
     }
 
     private void requestRequiredPermissions() {

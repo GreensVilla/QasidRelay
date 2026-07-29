@@ -26,6 +26,8 @@ codes from logs, device storage, or network traffic.
 - The SIM/carrier plan is authorized for the messages being sent.
 - The server uses HTTPS.
 - Device secrets are provisioned out of band.
+- Setup QR/deep-link payloads are shown only by a trusted gateway operator flow
+  and are treated as one-time secret material.
 
 ## Controls
 
@@ -34,6 +36,8 @@ codes from logs, device storage, or network traffic.
 - Timestamp and nonce replay protection expected on the server.
 - Shared secret encrypted at rest with Android Keystore AES-GCM.
 - `SEND_SMS` permission only; no `READ_SMS` in the initial app.
+- No camera permission; optional QR setup uses the phone camera/QR scanner to
+  open a `qasidrelay://setup` deep link.
 - Android sent-result callbacks before reporting terminal status.
 - Persistent status-report queue that retries failed gateway acknowledgements.
 - Bounded local recent-message ledger to reduce duplicate sends for repeated
@@ -57,4 +61,6 @@ message ID for different SMS content.
 - Disable battery optimizations only for the relay app if needed.
 - Monitor carrier warnings and failed-send rates.
 - Rotate device secrets if the phone is lost or reused.
+- Rotate device secrets if a setup QR/link was exposed outside the intended
+  operator setup flow.
 - Do not use consumer SMS bundles for unsolicited or high-volume campaigns.
