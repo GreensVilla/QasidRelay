@@ -8,7 +8,7 @@ Updated: 2026-07-29
 - Visibility: public
 - Default branch: `main`
 - License: Apache-2.0
-- Current handoff commit before this working pass: `b248bf8`
+- Current handoff commit before this working pass: `f4a7f85`
 - Description: `Open-source Android SIM relay for secure transactional SMS.`
 - Topics: `android`, `android-app`, `otp`, `self-hosted`, `sim-gateway`,
   `sms`, `sms-gateway`, `transactional-sms`
@@ -163,6 +163,21 @@ Current release follow-up:
   - install note: this uses the same package ID and release-signing path as
     `v0.1.6`, with `versionCode` 8, so it should update `v0.1.6` in place.
 
+## Real-device smoke evidence
+
+On 2026-07-29, a controlled GreensVilla staging phone-verification OTP was
+successfully sent through the full QasidRelay path: GreensVilla staging queued a
+message, the signed `v0.1.7` Android app polled over HTTPS/HMAC, the phone sent
+the SMS through the operator SIM, and the gateway recorded terminal `sent` with
+one send attempt. No OTP code, real phone number, private relay key, or message
+body is committed here.
+
+This proves the first real-device controlled-SIM smoke path for the current
+Android client and removes the prior Android-client smoke blocker. Further
+evidence is still needed for more device models, battery behavior, dual-SIM
+routing, and any future app feature touching SMS, notification, Keystore, or
+foreground-service behavior.
+
 ## Protocol direction
 
 The Android app expects a polling server contract documented in
@@ -209,16 +224,16 @@ Relevant docs:
 
 ## Next QasidRelay tasks
 
-1. Install and test the `v0.1.7` signed APK on a real Android phone with an
-   authorized SIM and a controlled recipient. It should update `v0.1.6` in
-   place; if a previous debug APK is installed, uninstall it once first.
+1. Use [`TODO.impl/app-features/`](TODO.impl/app-features/README.md) as the
+   ordered Android app feature backlog. Start with status dashboard, redacted
+   diagnostics, and battery optimization guidance.
 2. Run `connectedDebugAndroidTest` on a real device or emulator and record the
    Android Keystore evidence.
-3. Implement or deploy the minimal HTTPS/HMAC reference gateway before routing
-   real GreensVilla SMS traffic through QasidRelay.
-4. Add battery-optimization guidance from real devices and vendor-specific
+3. Add battery-optimization guidance from real devices and vendor-specific
    restrictions discovered during smoke testing.
-5. Add dual-SIM selection only after testing the target phone.
+4. Add dual-SIM selection only after testing the target phone.
+5. Implement or deploy the minimal HTTPS/HMAC reference gateway for non-GreensVilla
+   users, using the existing protocol docs as the contract.
 6. Decide client-package naming conventions:
    - proposed by owner: `QasidRelay-rb`, `QasidRelay-js`,
      `QasidRelay-rust`, `QasidRelay-python`.
@@ -226,7 +241,8 @@ Relevant docs:
 
 ## Current blocker
 
-No committed-secret or public-repo blocker is known. The next meaningful
-blockers are outside this Android client: a small HTTPS/HMAC gateway, then a
-real Android phone/SIM smoke test to verify SMS sending and foreground polling
-behavior.
+No committed-secret or public-repo blocker is known. The first controlled
+GreensVilla staging OTP smoke has passed through the signed Android app. The
+next meaningful Android-client blockers are additional real-device coverage,
+Keystore instrumentation evidence, battery behavior evidence, and any hardware-specific validation required by future app features. Generic public use still
+needs a reference gateway/site/docs path outside the Android client.

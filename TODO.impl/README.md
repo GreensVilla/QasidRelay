@@ -7,13 +7,43 @@ QasidRelay should remain polling-first: the phone must not expose an inbound
 public API. Future server or deployment work should implement the documented
 gateway protocol and keep transactional-only abuse controls.
 
+## Android app feature backlog
+
+The detailed operator-app feature plan lives in
+[`app-features/`](app-features/README.md). These tasks should be implemented
+after the current signed APK baseline and real-device smoke evidence, unless a
+field issue makes one task urgent.
+
+Priority order:
+
+1. status dashboard;
+2. redacted diagnostics;
+3. battery optimization guidance;
+4. local message activity history;
+5. SMS failure explanations;
+6. safer setup/reset/key-rotation UX;
+7. app update/version visibility;
+8. dual-SIM selector;
+9. server destination-policy display;
+10. optional operator lock;
+11. richer foreground notification;
+12. connectivity/backoff visibility;
+13. guided real-device test mode;
+14. multi-profile support;
+15. help/docs links.
+
+Global rule: these features must not add `READ_SMS`, inbound phone APIs,
+bulk-marketing workflows, cleartext HTTP, silent post-reboot sending, or secret
+export paths.
+
 ## Near-term
 
-- Implement or deploy a small HTTPS/HMAC reference gateway before real
-  GreensVilla SMS traffic is routed through QasidRelay. The Android app is a
-  polling client, not the provider endpoint that GreensVilla should call
-  directly.
-- Add real-device smoke-test evidence:
+- Implement or deploy a small HTTPS/HMAC reference gateway for non-GreensVilla
+  users. GreensVilla now has its own gateway integration; the Android app
+  remains a polling client, not the provider endpoint that external apps should
+  call directly.
+- Add expanded real-device smoke-test evidence beyond the first GreensVilla
+  staging success:
   - device model and Android version;
   - authorized SIM/carrier plan type;
   - redacted status-screen screenshot;
