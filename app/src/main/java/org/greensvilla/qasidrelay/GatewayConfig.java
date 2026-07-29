@@ -63,16 +63,16 @@ final class GatewayConfig {
 
     String validationError() {
         if (baseUrl.isEmpty()) {
-            return "Gateway base URL is required.";
+            return "Server URL is required.";
         }
         if (!isHttpsOrigin(baseUrl)) {
-            return "Gateway base URL must be an HTTPS origin, for example https://relay.example.";
+            return "Server URL must be an HTTPS origin, for example https://your-app.example.";
         }
         if (deviceId.isEmpty()) {
-            return "Device ID is required.";
+            return "Phone name is required.";
         }
         if (sharedSecret.isEmpty()) {
-            return "Shared secret is required.";
+            return "Private relay key is required.";
         }
         return null;
     }

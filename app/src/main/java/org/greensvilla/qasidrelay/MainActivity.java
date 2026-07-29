@@ -41,7 +41,6 @@ public class MainActivity extends Activity {
     private EditText baseUrlInput;
     private EditText deviceIdInput;
     private EditText secretInput;
-    private EditText pollSecondsInput;
     private TextView secretHelpText;
     private TextView noticeText;
     private TextView configStatusText;
@@ -102,7 +101,7 @@ public class MainActivity extends Activity {
         layout.addView(title);
 
         TextView subtitle = new TextView(this);
-        subtitle.setText("Polling Android SIM SMS relay for authorized transactional messages.");
+        subtitle.setText("Connect this phone to a trusted server, then send approved transactional SMS through its SIM.");
         subtitle.setTextColor(COLOR_MUTED);
         subtitle.setPadding(0, dp(4), 0, dp(16));
         layout.addView(subtitle);
@@ -119,23 +118,21 @@ public class MainActivity extends Activity {
         layout.addView(statusPanel);
 
         LinearLayout configPanel = panel();
-        configPanel.addView(sectionTitle("Gateway configuration"));
-        configPanel.addView(label("Gateway base URL"));
-        baseUrlInput = input("https://relay.example", config.baseUrl);
+        configPanel.addView(sectionTitle("Server connection"));
+        configPanel.addView(label("Server URL"));
+        baseUrlInput = input("https://your-app.example", config.baseUrl);
         configPanel.addView(baseUrlInput);
-        configPanel.addView(label("Device ID"));
-        deviceIdInput = input("qasid-device-01", config.deviceId);
+        configPanel.addView(helper("The HTTPS app URL this phone asks for pending SMS jobs."));
+        configPanel.addView(label("Phone name"));
+        deviceIdInput = input("shop-phone-01", config.deviceId);
         configPanel.addView(deviceIdInput);
-        configPanel.addView(label("Shared secret"));
-        secretInput = input("Leave blank to keep the stored secret", "");
+        configPanel.addView(helper("Must match the server's device ID for this phone."));
+        configPanel.addView(label("Private relay key"));
+        secretInput = input("Leave blank to keep the saved key", "");
         secretInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         configPanel.addView(secretInput);
         secretHelpText = helper("");
         configPanel.addView(secretHelpText);
-        configPanel.addView(label("Poll interval seconds"));
-        pollSecondsInput = input("10", String.valueOf(config.pollSeconds));
-        pollSecondsInput.setInputType(InputType.TYPE_CLASS_NUMBER);
-        configPanel.addView(pollSecondsInput);
 
         Button saveButton = primaryButton("Save configuration");
         saveButton.setOnClickListener(view -> saveConfig(true));
@@ -151,10 +148,6 @@ public class MainActivity extends Activity {
         messagingToggleButton = primaryButton("Enable messaging");
         messagingToggleButton.setOnClickListener(view -> toggleMessaging());
         controlPanel.addView(messagingToggleButton);
-
-        Button stopButton = secondaryButton("Stop foreground service");
-        stopButton.setOnClickListener(view -> stopRelay());
-        controlPanel.addView(stopButton);
 
         messagingHelpText = helper("");
         messagingHelpText.setPadding(0, dp(10), 0, 0);
@@ -259,7 +252,7 @@ public class MainActivity extends Activity {
             baseUrlInput.getText().toString(),
             deviceIdInput.getText().toString(),
             secret,
-            parsePollSeconds(pollSecondsInput.getText().toString()),
+            existing.pollSeconds,
             existing.messagingEnabled
         );
 
@@ -283,14 +276,6 @@ public class MainActivity extends Activity {
         } catch (RuntimeException error) {
             showNotice(error.getMessage());
             return false;
-        }
-    }
-
-    private int parsePollSeconds(String value) {
-        try {
-            return Integer.parseInt(value.trim());
-        } catch (NumberFormatException error) {
-            return 10;
         }
     }
 
@@ -351,10 +336,6 @@ public class MainActivity extends Activity {
             showNotice(detail);
             return false;
         }
-    }
-
-    private void stopRelay() {
-        disableMessaging("Messaging disabled and foreground service stopped.");
     }
 
     private void disableMessaging(String notice) {
@@ -434,8 +415,8 @@ public class MainActivity extends Activity {
         }
         if (secretHelpText != null) {
             secretHelpText.setText(config.sharedSecret.isEmpty()
-                ? "Enter the gateway shared secret. It will be encrypted with Android Keystore."
-                : "A shared secret is stored. Leave this blank to keep it, or enter a new value to rotate.");
+                ? "Enter the private relay key from the server. It will be encrypted with Android Keystore."
+                : "A private relay key is saved. Leave this blank to keep it, or enter a new key to rotate.");
         }
     }
 

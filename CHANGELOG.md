@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.4 - 2026-07-29
+
+### Changed
+
+- Android metadata bumped to `versionCode` 5 / `versionName` `0.1.4`.
+- Operator setup UI now asks for only three required values: server URL, phone
+  name, and private relay key.
+- Removed the poll interval field from the main setup form; the app keeps its
+  safe default polling interval.
+- Removed the redundant `Stop foreground service` control; `Disable messaging`
+  remains the single safe way to stop fetching and sending jobs.
+- Setup and release docs now use the same operator-facing field names.
+
 ## 0.1.3 - 2026-07-29
 
 ### Changed
