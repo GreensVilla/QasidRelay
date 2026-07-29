@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.7 - 2026-07-29
+
+### Fixed
+
+- Fixed Android Keystore encryption on devices that reject caller-provided
+  AES-GCM IVs when randomized encryption is required. QasidRelay now lets
+  Android Keystore generate the IV and stores that IV with the encrypted private
+  relay key.
+
+### Notes
+
+- This signed APK uses the same package ID and release-signing path as `0.1.6`,
+  with `versionCode` 8, so it should update `0.1.6` in place.
+
 ## 0.1.6 - 2026-07-29
 
 ### Added
