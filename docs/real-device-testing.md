@@ -8,7 +8,7 @@ data, real OTPs, or production recipient lists.
 - Android 6.0 / API 23 or newer.
 - Active SIM plan authorized to send the test message.
 - Test gateway reachable over HTTPS with a valid certificate.
-- Server-issued `device_id` and high-entropy shared secret.
+- Server-issued phone name/device ID and high-entropy private relay key.
 - One controlled destination number owned by the tester.
 - Android Debug Bridge (`adb`) available on the workstation.
 
@@ -21,18 +21,17 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 Open QasidRelay on the phone, grant required permissions, then configure:
 
-- gateway base URL, for example `https://relay.example`;
-- device ID, for example `qasid-device-01`;
-- shared secret from the test gateway;
-- poll interval, minimum 5 seconds.
+- server URL, for example `https://relay.example`;
+- phone name, for example `qasid-device-01`, matching the server device ID;
+- private relay key from the test gateway.
 
-The shared secret field is intentionally blank after saving. Leave it blank to
-keep the stored Keystore-encrypted secret, or enter a new value to rotate it.
+The private relay key field is intentionally blank after saving. Leave it blank
+to keep the stored Keystore-encrypted key, or enter a new value to rotate it.
 
 Messaging starts disabled. Use the `Enable messaging` button only after the
 gateway settings are correct and the test recipient is controlled by the tester.
-Use `Disable messaging` or `Stop foreground service` to stop fetching new jobs
-and sending SMS from the phone.
+Use `Disable messaging` to stop fetching new jobs and sending SMS from the
+phone.
 
 ## Smoke test
 

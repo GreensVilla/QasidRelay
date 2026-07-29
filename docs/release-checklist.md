@@ -13,7 +13,7 @@ Use this before publishing an APK from GitHub Releases.
 
 ## Security
 
-- Confirm no real shared secret is committed.
+- Confirm no real private relay key/shared secret is committed.
 - Confirm no real phone number or OTP appears in examples or screenshots.
 - Confirm `READ_SMS` is not requested unless a future release explicitly adds
   inbound SMS support.
@@ -27,7 +27,7 @@ Use this before publishing an APK from GitHub Releases.
 
 - Install APK on a dedicated Android phone with an authorized SIM.
 - Grant `SEND_SMS` and, on Android 13+, notification permission.
-- Configure gateway URL, device ID, and shared secret.
+- Configure server URL, phone name/device ID, and private relay key.
 - Confirm messaging is disabled until the operator taps `Enable messaging`.
 - Queue one test transactional SMS on the server.
 - Confirm the phone sends exactly one SMS.
