@@ -14,8 +14,13 @@ messaging, scraping, spam, or bypassing carrier/provider rules.
 
 Release line: `0.1.x` phone-local Android client.
 
-Latest debug prerelease:
-[`v0.1.5`](https://github.com/GreensVilla/QasidRelay/releases/tag/v0.1.5).
+Latest signed prerelease:
+[`v0.1.6`](https://github.com/GreensVilla/QasidRelay/releases/tag/v0.1.6).
+
+If you installed an older CI/debug APK such as `v0.1.5`, Android requires one
+uninstall before installing `v0.1.6` because debug and release signing
+certificates differ. After `v0.1.6` is installed, future signed APKs released
+with the same signing key and a higher `versionCode` should update in place.
 
 The Android app has a working polling baseline, HMAC-signed requests,
 Keystore-backed private relay key storage, simplified operator setup with
@@ -88,8 +93,10 @@ See [CHANGELOG.md](CHANGELOG.md).
 ./gradlew :app:assembleDebug --no-daemon
 ```
 
-GitHub Actions uploads `qasidrelay-debug-apk` for CI runs. The debug APK is for
-controlled testing only; a signed release APK workflow is still deferred.
+GitHub Actions uploads `qasidrelay-debug-apk` for CI runs and
+`qasidrelay-signed-release-apk` when release signing secrets are configured.
+Use the signed release APK for operator testing; keep debug APKs for internal CI
+validation only.
 
 ## Protocol
 
