@@ -15,12 +15,12 @@ messaging, scraping, spam, or bypassing carrier/provider rules.
 Release line: `0.1.x` phone-local Android client.
 
 Latest signed prerelease:
-[`v0.1.6`](https://github.com/GreensVilla/QasidRelay/releases/tag/v0.1.6).
+[`v0.1.7`](https://github.com/GreensVilla/QasidRelay/releases/tag/v0.1.7).
 
 If you installed an older CI/debug APK such as `v0.1.5`, Android requires one
-uninstall before installing `v0.1.6` because debug and release signing
-certificates differ. After `v0.1.6` is installed, future signed APKs released
-with the same signing key and a higher `versionCode` should update in place.
+uninstall before installing the signed line because debug and release signing
+certificates differ. Signed releases `v0.1.6` and newer use the same signing
+path and increasing `versionCode`, so they should update in place.
 
 The Android app has a working polling baseline, HMAC-signed requests,
 Keystore-backed private relay key storage, simplified operator setup with

@@ -144,12 +144,24 @@ Current release follow-up:
     higher `versionCode` should update in place.
   - signing note: signing material is stored in GitHub Actions secrets; no
     signing key or password is committed to the repository.
-- Android Keystore encryption fix is needed after field testing showed the app
-  error `Could not encrypt shared secret with Android Keystore` when saving the
-  private relay key. The fix is to let Android Keystore generate the AES-GCM IV
-  during encryption, then store that IV with the ciphertext. Release as a signed
-  APK with a higher `versionCode` than `v0.1.6` so installed signed builds can
-  update in place.
+- `v0.1.7` is published as a signed prerelease:
+  - release URL: <https://github.com/GreensVilla/QasidRelay/releases/tag/v0.1.7>
+  - release commit: `e88d181921e826db6f35488da474066f8122760c`
+  - release PR: <https://github.com/GreensVilla/QasidRelay/pull/15>
+  - release CI: GitHub Actions run `30467882387`
+  - `static`: passed
+  - `android`: passed, including `:app:testDebugUnitTest`,
+    `:app:assembleDebug`, signed release APK build, and signed APK artifact
+    upload
+  - asset: `QasidRelay-v0.1.7-signed.apk`
+  - asset SHA-256:
+    `a4f9eb6361d82c2b366aaf43811893660425c9d2aee17d73ee3c1d3918cbc0ac`
+  - notable fix: field testing showed `Could not encrypt shared secret with
+    Android Keystore` while saving the private relay key. The fix lets Android
+    Keystore generate the AES-GCM IV during encryption, then stores that IV with
+    the ciphertext.
+  - install note: this uses the same package ID and release-signing path as
+    `v0.1.6`, with `versionCode` 8, so it should update `v0.1.6` in place.
 
 ## Protocol direction
 
@@ -197,10 +209,9 @@ Relevant docs:
 
 ## Next QasidRelay tasks
 
-1. Install and test the `v0.1.6` signed APK on a real Android phone with an
-   authorized SIM and a controlled recipient. If a previous debug APK is
-   installed, uninstall it once first; future signed APKs should update in
-   place.
+1. Install and test the `v0.1.7` signed APK on a real Android phone with an
+   authorized SIM and a controlled recipient. It should update `v0.1.6` in
+   place; if a previous debug APK is installed, uninstall it once first.
 2. Run `connectedDebugAndroidTest` on a real device or emulator and record the
    Android Keystore evidence.
 3. Implement or deploy the minimal HTTPS/HMAC reference gateway before routing
