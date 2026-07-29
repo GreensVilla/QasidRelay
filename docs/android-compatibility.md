@@ -25,10 +25,13 @@ after testing that exact device.
 
 ## Boot and restart behavior
 
-QasidRelay targets API 35 and runs the relay as a `dataSync` foreground service.
-Android 15 restricts `BOOT_COMPLETED` receivers from launching `dataSync`
-foreground services directly, so QasidRelay does not auto-start polling or SMS
-sending after device reboot.
+QasidRelay targets API 35 and runs the relay as a `remoteMessaging` foreground
+service because its job is to transfer server-owned transactional text messages
+through the operator's phone/SIM.
+
+The app still does not auto-start polling or SMS sending after device reboot or
+package replacement. Android foreground-service startup rules vary by version
+and vendor, and the safer operator boundary is explicit foreground consent.
 
 Instead, the app records that a manual restart is required when it receives
 `BOOT_COMPLETED` or `MY_PACKAGE_REPLACED` while messaging is enabled. The status
@@ -47,6 +50,9 @@ post-reboot SMS sending.
 - Dual-SIM routing is not implemented in the first version.
 - Foreground service behavior varies across Android vendors; battery
   optimization settings may need manual adjustment.
+- If Android never returns sent callbacks for a submitted SMS, QasidRelay fails
+  that stale attempt closed after a bounded timeout and queues a terminal
+  `failed` report for the gateway.
 - Disabling messaging stops fetching new jobs and stops the foreground relay
   service. Already-submitted Android SMS callbacks may still complete.
 - `sent` status means Android accepted all SMS parts through sent callbacks; it

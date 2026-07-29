@@ -9,6 +9,10 @@ gateway protocol and keep transactional-only abuse controls.
 
 ## Near-term
 
+- Implement or deploy a small HTTPS/HMAC reference gateway before real
+  GreensVilla SMS traffic is routed through QasidRelay. The Android app is a
+  polling client, not the provider endpoint that GreensVilla should call
+  directly.
 - Add real-device smoke-test evidence:
   - device model and Android version;
   - authorized SIM/carrier plan type;
@@ -16,7 +20,8 @@ gateway protocol and keep transactional-only abuse controls.
   - signed polling/status logs from a test gateway;
   - exactly-one-send observation for one controlled test recipient.
 - Add Android UI evidence to release notes after real-device testing.
-- Add instrumentation coverage for Android Keystore secret storage.
+- Run `connectedDebugAndroidTest` on a real device or emulator and record the
+  Android Keystore instrumentation-test evidence.
 - Add a signed release APK workflow using GitHub Actions secrets. Do not commit
   signing keys or keystore passwords.
 

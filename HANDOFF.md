@@ -1,6 +1,6 @@
 # QasidRelay handoff
 
-Updated: 2026-07-23
+Updated: 2026-07-29
 
 ## Repository
 
@@ -8,7 +8,7 @@ Updated: 2026-07-23
 - Visibility: public
 - Default branch: `main`
 - License: Apache-2.0
-- Current handoff commit before this working pass: `dd02660`
+- Current handoff commit before this working pass: `b248bf8`
 - Description: `Open-source Android SIM relay for secure transactional SMS.`
 - Topics: `android`, `android-app`, `otp`, `self-hosted`, `sim-gateway`,
   `sms`, `sms-gateway`, `transactional-sms`
@@ -30,12 +30,16 @@ The repo started this pass from a CI-passing first Android/OSS baseline:
 - shared relay secret encrypted at rest with Android Keystore AES-GCM
 - HMAC-signed server requests
 
-This working pass adds:
+The 0.1.x line now includes:
 
 - Android SMS sent callbacks before queuing terminal status
 - persistent retry queue for status reports
 - bounded local recent-message ledger to reduce duplicate sends
 - phone-local messaging enable/disable control for operators
+- safe manual restart flow after reboot or package replacement
+- Android Keystore and stale-attempt instrumentation coverage source
+- `remoteMessaging` foreground-service declaration for the relay worker
+- bounded stale-attempt recovery that queues a terminal `failed` status
 - signer unit tests are configured for CI through `:app:testDebugUnitTest`
 - status screen shows configuration, permissions, service state, last poll, last
   delivery event, and pending report count
@@ -85,6 +89,8 @@ Current release follow-up:
 - `v0.1.1` adds phone-local messaging enable/disable control and deferred
   implementation TODOs.
 - `v0.1.2` targets downloadable debug APK artifacts from GitHub Actions.
+- `v0.1.3` should be cut from this pass after CI verifies the
+  `remoteMessaging` and stale-attempt recovery changes.
 
 ## Protocol direction
 
@@ -132,22 +138,24 @@ Relevant docs:
 
 ## Next QasidRelay tasks
 
-1. Test APK on a real Android phone with a SIM.
-2. Add Android instrumentation coverage for `SecureSecretStore` where practical.
-3. Improve foreground-service resilience:
-   - boot/restart behavior;
-   - battery-optimization guidance from real devices;
-   - vendor-specific restrictions.
-4. Add a minimal reference gateway or contract tests when moving beyond the
-   phone-local `0.1.x` line.
-5. Add dual-SIM selection only after testing the target phone.
-6. Decide client-package naming conventions:
+1. Cut and publish the `v0.1.3` debug prerelease after GitHub Actions passes.
+2. Test the APK on a real Android phone with an authorized SIM and a controlled
+   recipient.
+3. Run `connectedDebugAndroidTest` on a real device or emulator and record the
+   Android Keystore evidence.
+4. Implement or deploy the minimal HTTPS/HMAC reference gateway before routing
+   real GreensVilla SMS traffic through QasidRelay.
+5. Add battery-optimization guidance from real devices and vendor-specific
+   restrictions discovered during smoke testing.
+6. Add dual-SIM selection only after testing the target phone.
+7. Decide client-package naming conventions:
    - proposed by owner: `QasidRelay-rb`, `QasidRelay-js`,
      `QasidRelay-rust`, `QasidRelay-python`.
    - Keep protocol docs authoritative so client repos stay consistent.
 
 ## Current blocker
 
-No active code blocker in QasidRelay. The next meaningful blocker is hardware:
-we need a real Android phone/SIM test to verify SMS sending and background
-polling behavior.
+No committed-secret or public-repo blocker is known. The next meaningful
+blockers are outside this Android client: a small HTTPS/HMAC gateway, then a
+real Android phone/SIM smoke test to verify SMS sending and foreground polling
+behavior.

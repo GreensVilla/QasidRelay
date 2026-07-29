@@ -7,6 +7,8 @@ import android.content.SharedPreferences;
 final class SmsAttemptStore {
     private static final String KEY_TOTAL_PREFIX = "sms_attempt_total.";
     private static final String KEY_ACKED_PREFIX = "sms_attempt_acked.";
+    private static final String KEY_CREATED_AT_PREFIX = "sms_attempt_created_at.";
+    private static final long STALE_AFTER_MILLIS = 15L * 60L * 1000L;
 
     private SmsAttemptStore() {
     }
@@ -18,19 +20,34 @@ final class SmsAttemptStore {
         prefs(context).edit()
             .putInt(KEY_TOTAL_PREFIX + messageId, Math.max(1, totalParts))
             .putString(KEY_ACKED_PREFIX + messageId, "")
+            .putLong(KEY_CREATED_AT_PREFIX + messageId, System.currentTimeMillis())
             .apply();
-        RelayMessageLedger.remember(context, messageId);
     }
 
     static synchronized void remove(Context context, String messageId) {
         prefs(context).edit()
             .remove(KEY_TOTAL_PREFIX + messageId)
             .remove(KEY_ACKED_PREFIX + messageId)
+            .remove(KEY_CREATED_AT_PREFIX + messageId)
             .apply();
     }
 
     static synchronized boolean exists(Context context, String messageId) {
         return prefs(context).contains(KEY_TOTAL_PREFIX + messageId);
+    }
+
+    static synchronized boolean isStale(Context context, String messageId, long nowMillis) {
+        SharedPreferences prefs = prefs(context);
+        if (!prefs.contains(KEY_TOTAL_PREFIX + messageId)) {
+            return false;
+        }
+
+        long createdAt = prefs.getLong(KEY_CREATED_AT_PREFIX + messageId, 0L);
+        return createdAt <= 0L || nowMillis - createdAt >= STALE_AFTER_MILLIS;
+    }
+
+    static long staleAfterMillis() {
+        return STALE_AFTER_MILLIS;
     }
 
     static synchronized CompletedStatus recordPartResult(

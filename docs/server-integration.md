@@ -53,6 +53,12 @@ If status reporting is temporarily unavailable, the phone retries queued reports
 before fetching new messages. Server implementations should accept late terminal
 statuses even after a lease expires.
 
+If Android never returns sent callbacks for a submitted SMS, QasidRelay fails
+the stale local attempt closed after a bounded timeout and queues `failed` with
+detail `stale_sms_attempt_without_android_callback`. The server should treat
+that as a terminal device failure for the leased message and should not create a
+new outbound job unless an operator deliberately requeues it.
+
 ## Abuse controls
 
 Before returning a pending message, enforce:

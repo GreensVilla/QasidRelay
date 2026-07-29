@@ -18,6 +18,8 @@ Use this before publishing an APK from GitHub Releases.
 - Confirm `READ_SMS` is not requested unless a future release explicitly adds
   inbound SMS support.
 - Confirm cleartext traffic remains disabled for release builds.
+- Confirm the relay service declares `remoteMessaging`, not `dataSync`, for the
+  foreground service type.
 - Confirm request-signing tests pass and any new protocol examples avoid real
   OTPs or phone numbers.
 
@@ -33,6 +35,8 @@ Use this before publishing an APK from GitHub Releases.
 - Tap `Disable messaging` and confirm the phone stops fetching new jobs.
 - Force a temporary network failure after send and confirm the status report
   queue retries before new messages are fetched.
+- Confirm stale in-flight attempts fail closed with a terminal `failed` status
+  instead of being skipped forever.
 - Capture any vendor battery-optimization steps needed for stable foreground
   service operation.
 

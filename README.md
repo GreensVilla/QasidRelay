@@ -15,9 +15,9 @@ messaging, scraping, spam, or bypassing carrier/provider rules.
 Release line: `0.1.x` phone-local Android client.
 
 The Android app has a working polling baseline, HMAC-signed requests,
-Keystore-backed shared-secret storage, local status reporting, and
-request-signing unit tests. The next major milestone is real-device validation
-against a test gateway.
+Keystore-backed shared-secret storage, local status reporting, Android sent
+callbacks, manual restart handling, and request-signing unit tests. The next
+major milestone is real-device validation against a test gateway.
 
 ## Intended use cases
 
@@ -51,6 +51,8 @@ need a public IP address and should not expose an inbound HTTP server.
 - Phone-local messaging enable/disable control for operators.
 - Android sent-result callbacks before terminal status reporting.
 - Persistent retry queue for status reports.
+- Bounded recovery for stale SMS attempts that never receive Android callbacks.
+- `remoteMessaging` foreground service for the relay worker.
 - Polling-only network model.
 - HTTPS-first configuration.
 - HMAC-signed requests.
