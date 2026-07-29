@@ -14,6 +14,9 @@ messaging, scraping, spam, or bypassing carrier/provider rules.
 
 Release line: `0.1.x` phone-local Android client.
 
+Latest debug prerelease:
+[`v0.1.3`](https://github.com/GreensVilla/QasidRelay/releases/tag/v0.1.3).
+
 The Android app has a working polling baseline, HMAC-signed requests,
 Keystore-backed shared-secret storage, local status reporting, Android sent
 callbacks, manual restart handling, and request-signing unit tests. The next
