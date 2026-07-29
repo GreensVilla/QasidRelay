@@ -16,7 +16,7 @@ public class BootCompletedReceiver extends BroadcastReceiver {
         if (config.messagingEnabled) {
             RelayStatusStore.markManualRestartRequired(
                 context,
-                "Device or app restarted. Android may block data-sync foreground services from starting at boot; open QasidRelay and tap Start relay service."
+                "Device or app restarted. Open QasidRelay and tap Start relay service before polling resumes."
             );
         } else {
             RelayStatusStore.markServiceRunning(context, false);

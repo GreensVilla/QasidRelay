@@ -16,6 +16,7 @@ import java.util.List;
 public class RelayService extends Service {
     private static final String TAG = "QasidRelay";
     private static final String CHANNEL_ID = "relay-status";
+    private static final String STALE_SMS_ATTEMPT_DETAIL = "stale_sms_attempt_without_android_callback";
     private volatile boolean running;
     private Thread worker;
 
@@ -90,12 +91,30 @@ public class RelayService extends Service {
                             StatusReportQueue.flush(this, client);
                             continue;
                         }
-                        if (RelayMessageLedger.hasSeen(this, message.id) || SmsAttemptStore.exists(this, message.id)) {
-                            RelayStatusStore.markMessageSkipped(this, message, "Message ID already handled locally.");
+                        if (SmsAttemptStore.exists(this, message.id)) {
+                            if (SmsAttemptStore.isStale(this, message.id, System.currentTimeMillis())) {
+                                SmsAttemptStore.remove(this, message.id);
+                                StatusReportQueue.enqueue(this, message.id, "failed", STALE_SMS_ATTEMPT_DETAIL);
+                                StatusReportQueue.flush(this, client);
+                                RelayStatusStore.markMessageSkipped(
+                                    this,
+                                    message,
+                                    "Stale SMS attempt expired; failed status queued for the gateway."
+                                );
+                                continue;
+                            }
+                            RelayStatusStore.markMessageSkipped(
+                                this,
+                                message,
+                                "SMS send attempt is still waiting for Android sent callbacks."
+                            );
+                            continue;
+                        }
+                        if (RelayMessageLedger.hasSeen(this, message.id)) {
+                            RelayStatusStore.markMessageSkipped(this, message, "Message ID already has local terminal status.");
                             continue;
                         }
 
-                        RelayMessageLedger.remember(this, message.id);
                         try {
                             sender.send(this, message);
                             RelayStatusStore.markMessageQueued(this, message);

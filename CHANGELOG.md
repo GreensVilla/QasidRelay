@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.1.3 - 2026-07-29
+
+### Changed
+
+- Android metadata bumped to `versionCode` 4 / `versionName` `0.1.3`.
+- Relay foreground service now declares `remoteMessaging` instead of `dataSync`,
+  matching the app's phone-local SMS relay purpose and avoiding Android 15
+  `dataSync` time-budget behavior.
+- Handoff and testing docs now reflect the merged safe restart flow and current
+  release state.
+- Android instrumentation coverage now includes stale SMS attempt state.
+
+### Fixed
+
+- Stale SMS attempts that never receive Android sent callbacks now fail closed
+  after a bounded timeout and queue a terminal `failed` status for the gateway,
+  instead of being skipped forever as locally handled.
+
 ## 0.1.2 - 2026-07-23
 
 ### Added

@@ -57,15 +57,18 @@ and sending SMS from the phone.
   receive `failed` with an Android SMS result detail.
 - Restart the app while a report is pending. The next service loop should retry
   the queued report before fetching more messages.
+- Restart or force-stop during an in-flight SMS attempt only in a controlled
+  test. If Android never returns sent callbacks, the app should fail that stale
+  attempt closed and queue a terminal `failed` status before sending any new
+  job with the same message ID.
 - Confirm the app never requests `READ_SMS`.
 - Confirm cleartext HTTP gateway URLs are rejected by the app.
 
 ## Reboot and app-update checks
 
 QasidRelay should not automatically resume polling or sending SMS after a device
-reboot. On Android 15 / target SDK 35, `dataSync` foreground services cannot be
-launched directly from `BOOT_COMPLETED`, and the operator should restart the
-relay from the foreground UI.
+reboot or app update. The operator should restart the relay from the foreground
+UI so post-reboot SMS sending never happens silently.
 
 1. Enable messaging and confirm the relay foreground notification is visible.
 2. Reboot the test phone, or simulate boot with:
