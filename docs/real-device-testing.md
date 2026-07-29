@@ -60,6 +60,33 @@ and sending SMS from the phone.
 - Confirm the app never requests `READ_SMS`.
 - Confirm cleartext HTTP gateway URLs are rejected by the app.
 
+## Reboot and app-update checks
+
+QasidRelay should not automatically resume polling or sending SMS after a device
+reboot. On Android 15 / target SDK 35, `dataSync` foreground services cannot be
+launched directly from `BOOT_COMPLETED`, and the operator should restart the
+relay from the foreground UI.
+
+1. Enable messaging and confirm the relay foreground notification is visible.
+2. Reboot the test phone, or simulate boot with:
+
+   ```sh
+   adb shell am broadcast -a android.intent.action.BOOT_COMPLETED -p org.greensvilla.qasidrelay
+   ```
+
+3. Open QasidRelay and confirm the status screen explains that a manual restart
+   is required.
+4. Confirm the messaging button says `Start relay service`, not `Disable
+   messaging`.
+5. Tap `Start relay service` and confirm polling resumes only after this user
+   action.
+6. Repeat the same expectation after reinstalling/updating the APK, or simulate
+   package replacement with:
+
+   ```sh
+   adb shell am broadcast -a android.intent.action.MY_PACKAGE_REPLACED -p org.greensvilla.qasidrelay
+   ```
+
 ## Evidence to capture
 
 - Device model, Android version, and carrier/SIM plan type.
@@ -67,3 +94,5 @@ and sending SMS from the phone.
 - Redacted gateway request logs showing signed polling and one terminal status.
 - Any vendor-specific battery optimization changes required to keep the
   foreground service alive.
+- Reboot/package-replace behavior, including whether the phone shows `Start
+  relay service` before polling resumes.

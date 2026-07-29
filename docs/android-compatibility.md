@@ -23,6 +23,21 @@ issues.
 If a real target phone is older than Android 6, compatibility can be revisited
 after testing that exact device.
 
+## Boot and restart behavior
+
+QasidRelay targets API 35 and runs the relay as a `dataSync` foreground service.
+Android 15 restricts `BOOT_COMPLETED` receivers from launching `dataSync`
+foreground services directly, so QasidRelay does not auto-start polling or SMS
+sending after device reboot.
+
+Instead, the app records that a manual restart is required when it receives
+`BOOT_COMPLETED` or `MY_PACKAGE_REPLACED` while messaging is enabled. The status
+screen then shows the service as stopped and the main messaging button changes to
+`Start relay service` so an operator can resume polling from the foreground UI.
+
+This keeps the phone-local operator consent boundary intact and avoids hidden
+post-reboot SMS sending.
+
 ## Known constraints
 
 - The app requires telephony messaging hardware.
