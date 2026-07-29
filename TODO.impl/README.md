@@ -22,8 +22,8 @@ gateway protocol and keep transactional-only abuse controls.
 - Add Android UI evidence to release notes after real-device testing.
 - Run `connectedDebugAndroidTest` on a real device or emulator and record the
   Android Keystore instrumentation-test evidence.
-- Add a signed release APK workflow using GitHub Actions secrets. Do not commit
-  signing keys or keystore passwords.
+- Keep the signed APK workflow healthy. Release signing is configured through
+  GitHub Actions secrets; do not commit signing keys or keystore passwords.
 
 ## Reference gateway
 

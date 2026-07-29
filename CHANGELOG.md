@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.1.6 - 2026-07-29
+
+### Added
+
+- Stable signed release APK support through GitHub Actions secrets.
+- CI now builds and uploads `qasidrelay-signed-release-apk` when signing
+  secrets are configured.
+
+### Changed
+
+- Android metadata bumped to `versionCode` 7 / `versionName` `0.1.6`.
+- Future signed APKs can update in place as long as the same signing key is
+  retained and `versionCode` continues increasing.
+
+### Notes
+
+- Devices that already installed a previous CI debug-signed APK must uninstall
+  once before installing this first stable signed APK. After that, signed
+  QasidRelay releases should update normally.
+
 ## 0.1.5 - 2026-07-29
 
 ### Added
