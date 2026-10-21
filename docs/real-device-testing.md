@@ -134,3 +134,18 @@ Run these checks on the operator UX branch before publishing a signed APK:
 Record Android version, device model, screenshots with secrets redacted,
 significant failures and any observed battery/poll interruptions. This
 checklist is not evidence that real-device tests have already passed.
+
+## Recent activity and failure guidance tests (unreleased)
+
+- Send a controlled single-part SMS. Confirm **Submitted to Android**,
+  **Android accepted SMS for sending**, pending gateway report, and report
+  acknowledgement appear without the body, recipient or raw message ID.
+- Produce more than 20 test events. Verify the 20-event limit and initial
+  five-row collapsed view; reopen the app to confirm persistence.
+- Induce a no-service/radio-off failure on an authorized test SIM. Confirm a
+  readable suggestion and no sensitive detail in the UI.
+- Tap **Clear local activity**; cancel once, confirm once. Verify pending
+  gateway reports and duplicate-send protection still function afterwards.
+- Execute `./gradlew :app:connectedDebugAndroidTest` on a physical test phone
+  and record the results for `RecentActivityStoreInstrumentedTest`.
+- Do not claim recipient delivery from Android sent callbacks.
