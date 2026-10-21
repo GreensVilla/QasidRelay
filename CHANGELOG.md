@@ -2,6 +2,14 @@
 
 ## Unreleased — operator UI/UX improvements
 
+### App version visibility
+
+- Display installed versionName/versionCode on the operator screen.
+- Provide a manual link to the official GitHub Releases page.
+- Add pure JVM tests for safe version label formatting and release URL.
+- No silent updater, extra permissions or background update traffic.
+
+
 ### Additional configuration safety
 
 - Add `Check setup locally` with clear notice that it does not authenticate
