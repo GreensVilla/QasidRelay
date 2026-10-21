@@ -29,6 +29,14 @@ callbacks, manual restart handling, and request-signing unit tests. A controlled
 
 ## Operator experience (unreleased)
 
+The second pass adds **Recent activity** (up to 20 redacted local SMS events),
+short operator explanations for common SMS send failures, and a confirmed
+**Clear local activity** action. Clearing the display does not touch the
+pending-report queue, in-flight attempts, or duplicate-send ledger.
+Android `sent` callbacks mean accepted for sending—not recipient delivery.
+The activity panel, like the dashboard, requires physical-device validation.
+
+
 The operator UX branch adds a clearer relay overview with a suggested next
 action, relative polling times, redacted diagnostics copying, and battery
 settings guidance. **These updates are not in the signed v0.1.7 APK.**
