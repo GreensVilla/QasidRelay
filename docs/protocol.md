@@ -136,3 +136,25 @@ The stale-attempt category remains
 `stale_sms_attempt_without_android_callback`. Servers should accept
 future safe categories rather than hardcode one exhaustive enum.
 An Android `sent` status does not prove delivery to the recipient.
+
+## Optional destination policy in pending response (backward compatible)
+
+A gateway **may** attach this informational object to an HTTP 200 response
+containing the existing `messages` array:
+
+```json
+{
+  "messages": [],
+  "destination_policy": {
+    "mode": "country_restricted",
+    "country_prefix": "+92"
+  }
+}
+```
+
+Recognized `mode` values: `allowlist_only`, `country_restricted`,
+`self_managed`. A country prefix must be `+` followed by 1–3 ASCII digits.
+The Android client shows an allowlisted label and never uses this value as
+a substitute for server-side destination/rate-limit enforcement. Unsupported
+or missing values display `Policy not reported by server`. Older gateways
+need not implement the field. A `204` response cannot carry policy metadata.
