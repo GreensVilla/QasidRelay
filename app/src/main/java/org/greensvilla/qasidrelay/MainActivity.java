@@ -182,6 +182,15 @@ public class MainActivity extends Activity {
         Button saveButton = primaryButton("Save configuration");
         saveButton.setOnClickListener(view -> saveConfig(true));
         configPanel.addView(saveButton);
+
+        Button checkSetupButton = secondaryButton("Check setup locally");
+        checkSetupButton.setOnClickListener(view -> checkSetupLocally());
+        configPanel.addView(checkSetupButton);
+
+        Button forgetServerButton = secondaryButton("Forget this server");
+        forgetServerButton.setTextColor(COLOR_DANGER);
+        forgetServerButton.setOnClickListener(view -> confirmForgetServer());
+        configPanel.addView(forgetServerButton);
         layout.addView(configPanel);
 
         LinearLayout controlPanel = panel();
@@ -489,17 +498,64 @@ public class MainActivity extends Activity {
         Toast.makeText(this, "Redacted diagnostics copied. Review before sharing.", Toast.LENGTH_LONG).show();
     }
 
+    private GatewayConfig proposedConfig() {
+        GatewayConfig current = GatewayConfig.load(this);
+        String newKey = secretInput.getText().toString().trim();
+        return new GatewayConfig(baseUrlInput.getText().toString(),
+            deviceIdInput.getText().toString(),
+            newKey.isEmpty() ? current.sharedSecret : newKey,
+            current.pollSeconds, current.messagingEnabled);
+    }
+
+    private void checkSetupLocally() {
+        String problem = proposedConfig().validationError();
+        showNotice(problem == null
+            ? "Setup fields are valid locally. This does not check gateway access, credentials, or connectivity."
+            : problem);
+    }
+
+    private String configurationChangeBlock(boolean changed, GatewayConfig existing) {
+        return ConfigurationChangeGuard.blockReason(
+            changed, existing.messagingEnabled, StatusReportQueue.count(this),
+            SmsAttemptStore.hasAnyPending(this)
+        );
+    }
+
+    private void confirmForgetServer() {
+        GatewayConfig current = GatewayConfig.load(this);
+        String block = configurationChangeBlock(true, current);
+        if (block != null) {
+            showNotice(block);
+            return;
+        }
+        new AlertDialog.Builder(this)
+            .setTitle("Forget this server?")
+            .setMessage("The saved HTTPS server, phone name and encrypted relay key will be cleared. Messaging will remain disabled. This action cannot recover the key; obtain a new one from your trusted gateway.")
+            .setNegativeButton("Cancel", (dialog, which) -> { })
+            .setPositiveButton("Forget server", (dialog, which) -> {
+                GatewayConfig latest = GatewayConfig.load(this);
+                String currentBlock = configurationChangeBlock(true, latest);
+                if (currentBlock != null) {
+                    showNotice(currentBlock);
+                    return;
+                }
+                stopService(new Intent(this, RelayService.class));
+                GatewayConfig.forget(this);
+                RelayMessageLedger.clear(this);
+                RecentActivityStore.clear(this);
+                RelayStatusStore.resetForNewGateway(this);
+                baseUrlInput.setText("");
+                deviceIdInput.setText("");
+                secretInput.setText("");
+                showNotice("Server forgotten. Enter new setup details before enabling messaging.");
+                updateStatus();
+            })
+            .show();
+    }
+
     private boolean saveConfig(boolean showToast) {
         GatewayConfig existing = GatewayConfig.load(this);
-        String providedSecret = secretInput.getText().toString().trim();
-        String secret = providedSecret.isEmpty() ? existing.sharedSecret : providedSecret;
-        GatewayConfig config = new GatewayConfig(
-            baseUrlInput.getText().toString(),
-            deviceIdInput.getText().toString(),
-            secret,
-            existing.pollSeconds,
-            existing.messagingEnabled
-        );
+        GatewayConfig config = proposedConfig();
 
         String validationError = config.validationError();
         if (validationError != null) {
@@ -509,10 +565,23 @@ public class MainActivity extends Activity {
             return false;
         }
 
+        boolean changed = ConfigurationChangeGuard.credentialsChanged(existing, config);
+        String block = configurationChangeBlock(changed, existing);
+        if (block != null) {
+            showNotice(block);
+            return false;
+        }
+
         try {
             config.save(this);
+            if (ConfigurationChangeGuard.gatewayChanged(existing, config)) {
+                // Only when settled and disabled: old IDs/status belong to a different gateway.
+                RelayMessageLedger.clear(this);
+                RecentActivityStore.clear(this);
+                RelayStatusStore.resetForNewGateway(this);
+            }
             secretInput.setText("");
-            showNotice("Configuration saved.");
+            showNotice("Configuration saved. Messaging stays disabled until you start the relay.");
             if (showToast) {
                 Toast.makeText(this, "Configuration saved", Toast.LENGTH_SHORT).show();
             }
