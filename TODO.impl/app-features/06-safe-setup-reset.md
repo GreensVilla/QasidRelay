@@ -1,8 +1,23 @@
 # 06 — Safer setup, reset, and key rotation UX
 
-Status: `PLANNED`
+Status: `IN PROGRESS` (guarded setup/reset implementation committed)
 
 Priority: `P1`
+
+## Implemented so far
+
+- Local-only setup validation with an explicit warning that no gateway call
+  or credential authentication was performed.
+- Server/device/key changes blocked while messaging is enabled, status reports
+  are queued, or Android SMS attempts remain in flight.
+- Confirmed Forget this server action, which refuses to run in unsafe states.
+- After safe reset or gateway identity change: clear credentials, previous
+  gateway-specific UI activity and deduplication state, and stale dashboard
+  status; preserve explicit operator start requirements.
+- Pure JVM tests for guard conditions and identity comparison.
+
+Still pending: real-device reset/key-rotation tests, safely authenticated
+remote connection-test design, and UI review of all failure paths.
 
 ## Goal
 
