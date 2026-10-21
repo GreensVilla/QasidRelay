@@ -29,6 +29,14 @@ callbacks, manual restart handling, and request-signing unit tests. A controlled
 
 ## Operator experience (unreleased)
 
+The setup screen now offers a **local field check** (no network request),
+explicitly guards changing server URL/device identity or rotating the key
+while the relay is enabled or reports/SMS callbacks are outstanding, and
+provides a confirmed **Forget this server** action. Reset clears server
+credentials and gateway-specific local history after the safety checks.
+It never auto-enables sending or exposes the saved private key.
+
+
 The second pass adds **Recent activity** (up to 20 redacted local SMS events),
 short operator explanations for common SMS send failures, and a confirmed
 **Clear local activity** action. Clearing the display does not touch the
