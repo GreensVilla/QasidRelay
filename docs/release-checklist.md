@@ -56,3 +56,22 @@ Use this before publishing an APK from GitHub Releases.
 - Update `docs/real-device-testing.md` with device-specific findings.
 - Record known limitations in the GitHub release notes.
 - Record the signed APK SHA-256 in the GitHub release notes.
+
+## Operator UX expansion release gate (after v0.1.7)
+
+- [ ] Confirm new GitHub `static`, `android` and `instrumentation`
+      workflow jobs are green on the exact candidate commit.
+- [ ] Review credentials, clipboard, history, setup reset, optional operator
+      lock and notification text for secret/PII exposure.
+- [ ] Validate new dashboard/test-mode UI at 320dp width, large font scale,
+      Android dark/theme behavior, landscape and accessibility focus order.
+- [ ] Run a controlled physical-SIM gateway smoke covering success, failure,
+      connectivity loss and pending status retries.
+- [ ] Test opt-in device-credential lock and safe server switching on hardware.
+- [ ] Test foreground/background/reboot behavior on representative vendors.
+- [ ] Review optional destination-policy contract against a compatible gateway
+      and confirm older gateways remain functional.
+- [ ] Increment app versionCode/versionName, create a signed **prerelease**,
+      verify its signature and APK install/update path.
+- [ ] Do not mark hardware-sensitive items done or advertise production use
+      without recorded device evidence; CI emulator is supplementary.
