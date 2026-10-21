@@ -1,8 +1,16 @@
 # 08 — Dual-SIM selector
 
-Status: `PLANNED`
+Status: `DEFERRED` (physical dual-SIM hardware validation required before implementing)
 
 Priority: `P2`
+
+## Deferral rationale
+
+The current device sends with Android's system-selected/default SMS subscription.
+Selecting a subscription ID without real dual-SIM testing can route messages
+through the wrong carrier or silently change billing. Do not implement or
+claim correctness until a controlled device test establishes subscription
+enumeration and SMS delivery behavior for supported Android versions.
 
 ## Goal
 
