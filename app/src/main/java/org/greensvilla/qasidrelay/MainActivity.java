@@ -62,6 +62,7 @@ public class MainActivity extends Activity {
     private TextView summaryDescriptionText;
     private Button suggestedActionButton;
     private TextView batteryStatusText;
+    private TextView installedVersionText;
     private LinearLayout activityList;
     private Button activityToggleButton;
     private Button clearActivityButton;
@@ -246,6 +247,17 @@ public class MainActivity extends Activity {
         batterySettingsButton.setOnClickListener(view -> openBatterySettings());
         batteryPanel.addView(batterySettingsButton);
         layout.addView(batteryPanel);
+
+        LinearLayout versionPanel = panel();
+        versionPanel.addView(sectionTitle("App version"));
+        installedVersionText = helper(installedVersion());
+        installedVersionText.setPadding(0, dp(4), 0, dp(6));
+        versionPanel.addView(installedVersionText);
+        Button releaseButton = secondaryButton("Open official releases");
+        releaseButton.setOnClickListener(view -> openOfficialReleases());
+        versionPanel.addView(releaseButton);
+        versionPanel.addView(helper("Updates are installed manually. Signed builds normally update in place; older debug builds may need one uninstall."));
+        layout.addView(versionPanel);
 
         TextView policy = helper("Transactional SMS only: OTP, password recovery, operational alerts, and private pilot notifications. The app does not request READ_SMS and does not expose an inbound phone API.");
         policy.setPadding(0, 0, 0, dp(12));
@@ -465,6 +477,23 @@ public class MainActivity extends Activity {
                 return "Duplicate or pending attempt skipped";
             default:
                 return "Activity";
+        }
+    }
+
+    private String installedVersion() {
+        try {
+            PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), 0);
+            return VersionPresentation.installed(info.versionName, info.versionCode);
+        } catch (NameNotFoundException error) {
+            return VersionPresentation.installed(null, 0);
+        }
+    }
+
+    private void openOfficialReleases() {
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(VersionPresentation.RELEASE_URL)));
+        } catch (RuntimeException error) {
+            showNotice("Cannot open a browser. Visit the official GreensVilla/QasidRelay Releases page on GitHub.");
         }
     }
 
