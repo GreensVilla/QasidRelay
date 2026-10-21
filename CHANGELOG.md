@@ -2,6 +2,21 @@
 
 ## Unreleased — operator UI/UX improvements
 
+### Final software-side operator enhancements
+
+- Fix automatic sticky relaunch request for SMS foreground service;
+  remove raw exception text from polling log output.
+- Refresh foreground notification from coarse gateway/pending-report status.
+- Add passive guided test checklist, with a fresh send, gateway acceptance,
+  recent polling and empty queue required before local smoke is marked passed.
+- Add optional device-credential confirmation before sensitive operator actions.
+  No additional permission or app-managed PIN.
+- Parse and show optional read-only gateway destination-policy summary.
+- Add JVM tests for notification text, smoke-test conditions, lock policy,
+  and destination-policy sanitization.
+- Add Android emulator instrumentation CI and release-gate instructions.
+
+
 ### Help and troubleshooting links
 
 - Add external Help & documentation menu linking to maintained QasidRelay
