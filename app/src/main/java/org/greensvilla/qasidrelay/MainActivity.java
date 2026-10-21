@@ -72,6 +72,7 @@ public class MainActivity extends Activity {
     private TextView permissionStatusText;
     private TextView serviceStatusText;
     private TextView pollStatusText;
+    private TextView gatewayStatusText;
     private TextView messageStatusText;
     private TextView queueStatusText;
     private Button messagingToggleButton;
@@ -159,6 +160,7 @@ public class MainActivity extends Activity {
         permissionStatusText = statusRow(statusPanel, "Permissions");
         serviceStatusText = statusRow(statusPanel, "Service");
         pollStatusText = statusRow(statusPanel, "Polling");
+        gatewayStatusText = statusRow(statusPanel, "Gateway");
         messageStatusText = statusRow(statusPanel, "Last delivery");
         queueStatusText = statusRow(statusPanel, "Report queue");
         layout.addView(statusPanel);
@@ -771,6 +773,14 @@ public class MainActivity extends Activity {
         if (pollStatusText != null) {
             pollStatusText.setText("Last check: " + relativeTime(status.lastPollAt) +
                 "\nLast successful check: " + relativeTime(status.lastSuccessAt));
+        }
+        if (gatewayStatusText != null) {
+            gatewayStatusText.setText("Gateway: " +
+                GatewayFailureGuide.title(status.gatewayCategory) +
+                "\n" + GatewayFailureGuide.action(status.gatewayCategory) +
+                (config.messagingEnabled
+                    ? "\nConfigured check interval: " + config.pollSeconds + " seconds."
+                    : ""));
         }
         if (messageStatusText != null) {
             if (status.lastMessageId.isEmpty()) {
