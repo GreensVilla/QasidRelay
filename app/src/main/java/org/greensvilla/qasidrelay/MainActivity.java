@@ -258,6 +258,9 @@ public class MainActivity extends Activity {
         Button releaseButton = secondaryButton("Open official releases");
         releaseButton.setOnClickListener(view -> openOfficialReleases());
         versionPanel.addView(releaseButton);
+        Button helpButton = secondaryButton("Help & documentation");
+        helpButton.setOnClickListener(view -> showDocumentationLinks());
+        versionPanel.addView(helpButton);
         versionPanel.addView(helper("Updates are installed manually. Signed builds normally update in place; older debug builds may need one uninstall."));
         layout.addView(versionPanel);
 
@@ -492,10 +495,27 @@ public class MainActivity extends Activity {
     }
 
     private void openOfficialReleases() {
+        openOfficialLink(VersionPresentation.RELEASE_URL);
+    }
+
+    private void showDocumentationLinks() {
+        new AlertDialog.Builder(this)
+            .setTitle("Help & documentation")
+            .setItems(SupportLinks.LABELS, (dialog, selected) ->
+                openOfficialLink(SupportLinks.url(selected)))
+            .setNegativeButton("Close", (dialog, selected) -> { })
+            .show();
+    }
+
+    private void openOfficialLink(String url) {
+        if (url == null || !url.startsWith("https://github.com/GreensVilla/QasidRelay/")) {
+            showNotice("Unrecognized documentation link.");
+            return;
+        }
         try {
-            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(VersionPresentation.RELEASE_URL)));
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
         } catch (RuntimeException error) {
-            showNotice("Cannot open a browser. Visit the official GreensVilla/QasidRelay Releases page on GitHub.");
+            showNotice("Cannot open a browser. View project docs on the official GreensVilla/QasidRelay GitHub page.");
         }
     }
 
