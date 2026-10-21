@@ -25,8 +25,18 @@ path and increasing `versionCode`, so they should update in place.
 The Android app has a working polling baseline, HMAC-signed requests,
 Keystore-backed private relay key storage, simplified operator setup with
 optional setup QR/deep-link prefill, local status reporting, Android sent
-callbacks, manual restart handling, and request-signing unit tests. The next
-major milestone is real-device validation against a test gateway.
+callbacks, manual restart handling, and request-signing unit tests. A controlled GreensVilla staging OTP smoke test passed on July 29, 2026. Broader device, battery and background-reliability testing remains necessary.
+
+## Operator experience (unreleased)
+
+The operator UX branch adds a clearer relay overview with a suggested next
+action, relative polling times, redacted diagnostics copying, and battery
+settings guidance. **These updates are not in the signed v0.1.7 APK.**
+
+Diagnostics omit relay keys, setup links, raw exception messages, message IDs,
+SMS contents, and recipient numbers. Review the report before sharing it with
+trusted support. Android battery optimization settings are advisory and do not
+guarantee reliable background polling.
 
 ## Intended use cases
 
