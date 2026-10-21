@@ -1,8 +1,20 @@
 # 05 — Clear SMS failure explanations
 
-Status: `PLANNED`
+Status: `IN PROGRESS` (failure classification committed)
 
 Priority: `P1`
+
+## Implemented so far
+
+- Centralized common SMS sent-result code mapping with safe gateway code,
+  readable short label and practical operator action.
+- Supports no service, radio off, null PDU, generic and unknown failures,
+  plus stalled callbacks and synchronous send exceptions in UI activity.
+- Unknown callback numeric codes are not passed through to gateway or UI.
+- Tests assert no recipient-delivery claims and safe unknown-code behavior.
+
+Still pending: real-device no-signal/radio-off smoke evidence, deeper
+Android-version code mappings, and broader carrier-specific troubleshooting.
 
 ## Goal
 
