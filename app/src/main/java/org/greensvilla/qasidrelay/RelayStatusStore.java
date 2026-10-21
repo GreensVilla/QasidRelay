@@ -15,6 +15,7 @@ final class RelayStatusStore {
     private static final String KEY_LAST_MESSAGE_AT = "status_last_message_at";
     private static final String KEY_PENDING_REPORT_COUNT = "status_pending_report_count";
     private static final String KEY_GATEWAY_CATEGORY = "status_gateway_category";
+    private static final String KEY_GATEWAY_POLICY = "status_gateway_policy";
 
     private RelayStatusStore() {
     }
@@ -32,6 +33,7 @@ final class RelayStatusStore {
             .remove(KEY_LAST_MESSAGE_AT)
             .putInt(KEY_PENDING_REPORT_COUNT, 0)
             .remove(KEY_GATEWAY_CATEGORY)
+            .remove(KEY_GATEWAY_POLICY)
             .apply();
     }
 
@@ -81,6 +83,11 @@ final class RelayStatusStore {
             .putString(KEY_DETAIL, GatewayFailureGuide.title(GatewayFailureGuide.classify(error)))
             .putString(KEY_GATEWAY_CATEGORY, GatewayFailureGuide.classify(error))
             .apply();
+    }
+
+    static void markGatewayPolicy(Context context, String policy) {
+        edit(context).putString(KEY_GATEWAY_POLICY,
+            policy == null ? GatewayPolicy.NOT_REPORTED : policy).apply();
     }
 
     static void markMessageQueued(Context context, PendingMessage message) {
@@ -153,7 +160,8 @@ final class RelayStatusStore {
             prefs.getString(KEY_LAST_MESSAGE_DETAIL, ""),
             prefs.getLong(KEY_LAST_MESSAGE_AT, 0L),
             prefs.getInt(KEY_PENDING_REPORT_COUNT, StatusReportQueue.count(context)),
-            prefs.getString(KEY_GATEWAY_CATEGORY, "unknown")
+            prefs.getString(KEY_GATEWAY_CATEGORY, "unknown"),
+            prefs.getString(KEY_GATEWAY_POLICY, GatewayPolicy.NOT_REPORTED)
         );
     }
 
@@ -185,6 +193,7 @@ final class RelayStatusStore {
         final long lastMessageAt;
         final int pendingReportCount;
         final String gatewayCategory;
+        final String gatewayPolicy;
 
         Snapshot(
             boolean serviceRunning,
@@ -197,7 +206,8 @@ final class RelayStatusStore {
             String lastMessageDetail,
             long lastMessageAt,
             int pendingReportCount,
-            String gatewayCategory
+            String gatewayCategory,
+            String gatewayPolicy
         ) {
             this.serviceRunning = serviceRunning;
             this.state = state == null ? "" : state;
@@ -210,6 +220,7 @@ final class RelayStatusStore {
             this.lastMessageAt = lastMessageAt;
             this.pendingReportCount = pendingReportCount;
             this.gatewayCategory = gatewayCategory == null ? "unknown" : gatewayCategory;
+            this.gatewayPolicy = gatewayPolicy == null ? GatewayPolicy.NOT_REPORTED : gatewayPolicy;
         }
     }
 }
