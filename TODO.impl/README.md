@@ -16,9 +16,9 @@ field issue makes one task urgent.
 
 Priority order:
 
-1. status dashboard;
-2. redacted diagnostics;
-3. battery optimization guidance;
+1. status dashboard (first UI implementation on the operator UX branch; pending more gateway fields and QA);
+2. redacted diagnostics (copy action implemented; pending device clipboard test);
+3. battery optimization guidance (generic guidance implemented; vendor testing pending);
 4. local message activity history;
 5. SMS failure explanations;
 6. safer setup/reset/key-rotation UX;
