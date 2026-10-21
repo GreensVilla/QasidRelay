@@ -36,6 +36,13 @@ Global rule: these features must not add `READ_SMS`, inbound phone APIs,
 bulk-marketing workflows, cleartext HTTP, silent post-reboot sending, or secret
 export paths.
 
+## Operator activity work (unreleased)
+
+- Task 04, activity history: implementation committed. Pending physical-device
+  verification and small-screen review.
+- Task 05, SMS error guidance: code and unit tests committed. Additional carrier
+  error mappings and controlled device failure tests remain.
+
 ## Near-term
 
 - Implement or deploy a small HTTPS/HMAC reference gateway for non-GreensVilla
