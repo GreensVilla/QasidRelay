@@ -198,3 +198,14 @@ checklist is not evidence that real-device tests have already passed.
   and does not suggest the app has an unimplemented adaptive backoff policy.
 - Copy diagnostics and confirm no exception text, raw URLs, OTPs or phone
   numbers appear. Record real-device findings before claiming completion.
+
+## Official help links (unreleased)
+
+1. With no gateway configured, open **Help & documentation**.
+2. Open setup, troubleshooting, security, abuse policy, protocol and server
+   integration resources in the external browser. Verify each official URL
+   remains on `github.com/GreensVilla/QasidRelay`.
+3. Verify no server URL, key, recipient number or device ID is present in
+   the browser URL. Back navigation should return to the operator app.
+4. Repeat with an active relay and a small screen; the Help action must not
+   change SMS permissions, sending state or device configuration.
