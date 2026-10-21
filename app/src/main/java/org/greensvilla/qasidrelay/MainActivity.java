@@ -63,6 +63,9 @@ public class MainActivity extends Activity {
     private Button suggestedActionButton;
     private TextView batteryStatusText;
     private TextView installedVersionText;
+    private TextView testProgressText;
+    private Button testToggleButton;
+    private static final String TEST_PREF = "smoke_test_started_at";
     private LinearLayout activityList;
     private Button activityToggleButton;
     private Button clearActivityButton;
@@ -250,6 +253,17 @@ public class MainActivity extends Activity {
         batteryPanel.addView(batterySettingsButton);
         layout.addView(batteryPanel);
 
+        LinearLayout testPanel = panel();
+        testPanel.addView(sectionTitle("Guided device test"));
+        testPanel.addView(helper("Only for a controlled recipient you own or are authorized to test. No test SMS is generated here."));
+        testProgressText = helper("");
+        testProgressText.setPadding(0, dp(8), 0, dp(8));
+        testPanel.addView(testProgressText);
+        testToggleButton = secondaryButton("Start local test checklist");
+        testToggleButton.setOnClickListener(view -> toggleTestChecklist());
+        testPanel.addView(testToggleButton);
+        layout.addView(testPanel);
+
         LinearLayout versionPanel = panel();
         versionPanel.addView(sectionTitle("App version"));
         installedVersionText = helper(installedVersion());
@@ -408,6 +422,73 @@ public class MainActivity extends Activity {
                 showNotice("Battery settings could not be opened. Open Android Settings, then find QasidRelay under Apps.");
             }
         }
+    }
+
+    private long smokeStartedAt() {
+        return getSharedPreferences(GatewayConfig.PREFS, Context.MODE_PRIVATE).getLong(TEST_PREF, 0L);
+    }
+
+    private void toggleTestChecklist() {
+        if (smokeStartedAt() > 0L) {
+            new AlertDialog.Builder(this)
+                .setTitle("End device test?")
+                .setMessage("This resets the local checklist only. It will not affect SMS sending or pending reports.")
+                .setNegativeButton("Cancel", (dialog, which) -> { })
+                .setPositiveButton("End test", (dialog, which) -> {
+                    getSharedPreferences(GatewayConfig.PREFS, Context.MODE_PRIVATE)
+                        .edit().remove(TEST_PREF).apply();
+                    updateTestChecklist();
+                }).show();
+        } else {
+            getSharedPreferences(GatewayConfig.PREFS, Context.MODE_PRIVATE).edit()
+                .putLong(TEST_PREF, System.currentTimeMillis()).apply();
+            updateTestChecklist();
+        }
+    }
+
+    private void updateTestChecklist() {
+        if (testProgressText == null) return;
+        long started = smokeStartedAt();
+        if (started <= 0L) {
+            testProgressText.setText(SmokeTestProgress.summary(false, false));
+            testToggleButton.setText("Start local test checklist");
+            return;
+        }
+        GatewayConfig config = GatewayConfig.load(this);
+        RelayStatusStore.Snapshot status = RelayStatusStore.load(this);
+        boolean configured = config.isReady();
+        boolean permitted = hasSmsPermission();
+        boolean service = config.messagingEnabled && status.serviceRunning;
+        boolean checked = status.lastSuccessAt >= started;
+        String expectedRef = RecentActivityPolicy.fingerprint(status.lastMessageId);
+        boolean sentAfterStart = false;
+        boolean reportedAfterStart = false;
+        for (RecentActivityStore.Entry entry : RecentActivityStore.recent(this)) {
+            if (entry.timestamp < started || !expectedRef.equals(entry.reference)) continue;
+            if ("sending".equals(entry.state)) sentAfterStart = true;
+            if ("reported".equals(entry.state)) reportedAfterStart = true;
+        }
+        boolean sent = "sent".equals(status.lastMessageStatus);
+        boolean ack = "Gateway status report accepted.".equals(status.lastMessageDetail)
+            && status.lastMessageAt >= started;
+        boolean passed = SmokeTestProgress.canPass(configured, permitted, service,
+            checked, sentAfterStart, reportedAfterStart, sent, ack, status.pendingReportCount);
+        String summary = SmokeTestProgress.summary(true, passed);
+        testProgressText.setText(summary +
+            "\n" + step(configured, "1. Trusted server configured") +
+            "\n" + step(permitted, "2. SMS permission granted") +
+            "\n" + step(service, "3. Relay foreground service running") +
+            "\n" + step(checked, "4. HTTPS/HMAC gateway poll succeeded since test start") +
+            "\n" + step(sentAfterStart, "5. Controlled test SMS submitted to Android") +
+            "\n" + step(sent && reportedAfterStart && ack,
+                "6. Android send accepted, status acknowledged by gateway") +
+            "\n" + step(status.pendingReportCount == 0, "7. Pending report queue empty") +
+            "\nUse the trusted gateway to queue exactly one authorized test message; do not use customer OTPs.");
+        testToggleButton.setText("End local test checklist");
+    }
+
+    private String step(boolean okay, String name) {
+        return (okay ? "✓ " : "○ ") + name;
     }
 
     private void confirmClearActivity() {
@@ -837,6 +918,7 @@ public class MainActivity extends Activity {
             }
         }
         updateRecentActivity();
+        updateTestChecklist();
         if (secretHelpText != null) {
             secretHelpText.setText(config.sharedSecret.isEmpty()
                 ? "Enter the private relay key from the server. It will be encrypted with Android Keystore."
