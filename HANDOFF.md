@@ -4,6 +4,17 @@ Updated: 2026-07-29 (historical handoff; see addendum)
 
 ## Operator UX addendum — 2026-10-21 (unreleased)
 
+Third implementation pass:
+
+- Guard editing gateway identity and relay key during active messaging,
+  outstanding report queue items, or in-flight SMS attempts.
+- Add local-only setup field validation and a confirmed Forget server action.
+- When a gateway identity actually changes safely, clear the prior gateway's
+  local deduplication history and UI activity, and reset stale dashboard state.
+- Stop starting additional fetched jobs after messaging is disabled.
+- No new permissions. Real-device validation is still mandatory before release.
+
+
 Second implementation on the same branch adds bounded, redacted recent activity,
 plain-language SMS error guidance, and confirmed history clearing independent
 of safety-critical delivery state. Includes JVM tests and Android instrumentation
