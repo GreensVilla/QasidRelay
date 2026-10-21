@@ -10,7 +10,8 @@ public class VersionPresentationTest {
 
     @Test public void sanitizesUnexpectedMetadata() {
         assertEquals("Installed: unknown (build 0)", VersionPresentation.installed(null, -1));
-        assertFalse(VersionPresentation.installed("0.1.8\\nsecret", 9).contains("\\n"));
+        assertEquals("Installed: 0.1.8secret (build 9)",
+            VersionPresentation.installed("0.1.8\nsecret", 9));
     }
 
     @Test public void officialReleaseLinkUsesHttps() {
