@@ -2,6 +2,15 @@
 
 ## Unreleased — operator UI/UX improvements
 
+### Gateway connectivity visibility
+
+- Classify HTTP auth, rate-limit and server errors separately from idle/no-jobs.
+- Provide network, timeout and TLS categories with operator-readable guidance.
+- Persist only coarse gateway failure states, not arbitrary exception details.
+- Show the configured polling interval without claiming adaptive backoff.
+- Add JVM tests for category mapping and sensitive exception redaction.
+
+
 ### App version visibility
 
 - Display installed versionName/versionCode on the operator screen.
