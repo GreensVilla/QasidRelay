@@ -111,7 +111,13 @@ jobs:
           arch: x86_64
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
-          script: ./gradlew :app:connectedDebugAndroidTest --no-daemon
+          script: |
+            ./gradlew :app:connectedDebugAndroidTest --no-daemon
+            adb shell am start -W -n org.greensvilla.qasidrelay/.MainActivity
+            sleep 3
+            adb shell pidof org.greensvilla.qasidrelay
+            mkdir -p app/build/reports/androidTests/connected
+            adb exec-out screencap -p > app/build/reports/androidTests/connected/operator-home.png
       - name: Upload instrumentation reports
         if: always()
         uses: actions/upload-artifact@v4
