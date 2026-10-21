@@ -29,6 +29,18 @@ callbacks, manual restart handling, and request-signing unit tests. A controlled
 
 ## Operator experience (unreleased)
 
+The software-side operator feature pass also includes a safe foreground
+notification, optional device-credential lock for sensitive actions,
+a **passive** guided test checklist and an optional read-only
+gateway destination-policy display. The relay uses `START_NOT_STICKY`
+to preserve operator-controlled foreground restart behavior.
+
+The Android CI now includes optional emulator instrumentation in pull requests;
+it does not replace controlled physical-SIM validation. Features requiring
+untested SIM hardware, per-gateway profile migration or wider provider support
+remain deferred until on-device verification.
+
+
 A built-in **Help & documentation** picker opens official GitHub setup,
 troubleshooting, security, abuse-policy, protocol and server-integration
 resources in an external browser. URLs are static and include no device ID,
