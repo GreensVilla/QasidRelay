@@ -1,8 +1,20 @@
 # 09 — Server destination policy display
 
-Status: `PLANNED`
+Status: `IN PROGRESS` (optional gateway policy reader implemented)
 
 Priority: `P2`
+
+## Implemented so far
+
+- Optional `destination_policy` field documented as a backward-compatible
+  extension to signed pending-job JSON responses.
+- App maps only known gateway policy modes to a read-only label.
+- Older gateways show `Policy not reported by server`.
+- Self-managed/unrestricted mode displays an explicit caution.
+- JVM tests cover safe fallback and country-prefix validation.
+
+Still pending: gateway-side adoption and real-device validation.
+Client display is informational and cannot replace server enforcement.
 
 ## Goal
 
