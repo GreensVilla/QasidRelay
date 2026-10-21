@@ -4,6 +4,14 @@ Updated: 2026-07-29 (historical handoff; see addendum)
 
 ## Operator UX addendum — 2026-10-21 (unreleased)
 
+Second implementation on the same branch adds bounded, redacted recent activity,
+plain-language SMS error guidance, and confirmed history clearing independent
+of safety-critical delivery state. Includes JVM tests and Android instrumentation
+test sources; the latter have **not** been executed on real hardware.
+Gateway callback error details now use safe allowlisted codes, including
+`SMS_RESULT_OTHER` for unknown failures.
+
+
 Branch: `codex/operator-dashboard-diagnostics-ux`.
 
 The first implementation adds an operator status summary and contextual actions,
