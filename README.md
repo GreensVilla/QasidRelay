@@ -29,6 +29,11 @@ callbacks, manual restart handling, and request-signing unit tests. A controlled
 
 ## Operator experience (unreleased)
 
+For small phones, the home screen now prioritizes its one-line health summary
+and explicit messaging controls. Technical status rows can be expanded on
+demand; advanced server setup is below the primary operator controls.
+
+
 The software-side operator feature pass also includes a safe foreground
 notification, optional device-credential lock for sensitive actions,
 a **passive** guided test checklist and an optional read-only
