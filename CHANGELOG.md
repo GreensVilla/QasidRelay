@@ -2,6 +2,13 @@
 
 ## Unreleased — operator UI/UX improvements
 
+### Small-screen usability
+
+- Collapse technical status rows by default, with a Show/Hide details toggle.
+- Promote start/stop and SMS-permission controls above advanced server setup.
+- Confirm the compact operator view on a 320 × 640 Android emulator screenshot.
+
+
 ### Final software-side operator enhancements
 
 - Fix automatic sticky relaunch request for SMS foreground service;
