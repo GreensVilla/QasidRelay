@@ -81,6 +81,7 @@ public class MainActivity extends Activity {
     private TextView serviceStatusText;
     private TextView pollStatusText;
     private TextView gatewayStatusText;
+    private TextView gatewayPolicyText;
     private TextView messageStatusText;
     private TextView queueStatusText;
     private Button messagingToggleButton;
@@ -182,6 +183,7 @@ public class MainActivity extends Activity {
         serviceStatusText = statusRow(statusPanel, "Service");
         pollStatusText = statusRow(statusPanel, "Polling");
         gatewayStatusText = statusRow(statusPanel, "Gateway");
+        gatewayPolicyText = statusRow(statusPanel, "Destination policy");
         messageStatusText = statusRow(statusPanel, "Last delivery");
         queueStatusText = statusRow(statusPanel, "Report queue");
         layout.addView(statusPanel);
@@ -964,6 +966,10 @@ public class MainActivity extends Activity {
                 (config.messagingEnabled
                     ? "\nConfigured check interval: " + config.pollSeconds + " seconds."
                     : ""));
+        }
+        if (gatewayPolicyText != null) {
+            gatewayPolicyText.setText("Gateway-reported policy: " + status.gatewayPolicy +
+                "\nThis is informational; the server must enforce its own destination restrictions.");
         }
         if (messageStatusText != null) {
             if (status.lastMessageId.isEmpty()) {
