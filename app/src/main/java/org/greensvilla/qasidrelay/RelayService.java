@@ -87,6 +87,7 @@ public class RelayService extends Service {
                     RelayStatusStore.markPolling(this);
                     List<PendingMessage> messages = client.fetchPending();
                     RelayStatusStore.markPollSucceeded(this, messages.size());
+                    RelayStatusStore.markGatewayPolicy(this, client.lastPolicySummary());
                     for (PendingMessage message : messages) {
                         // A foreground operator stop must prevent additional queued sends.
                         if (!running || !GatewayConfig.load(this).messagingEnabled) {
