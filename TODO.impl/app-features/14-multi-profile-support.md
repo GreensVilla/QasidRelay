@@ -1,8 +1,16 @@
 # 14 — Multi-profile support
 
-Status: `PLANNED`
+Status: `DEFERRED` (requires stable single-profile device validation and migration tests)
 
 Priority: `P3`
+
+## Deferral rationale
+
+The current app stores one Keystore-protected server identity and persistent
+outbound SMS attempt/report state. Migrating or switching identities without
+physical-device testing risks losing outstanding delivery reports or sending
+with a wrong account. Keep the explicit safe single-profile reset path until
+migration, hardware and rollback tests are available.
 
 ## Goal
 
