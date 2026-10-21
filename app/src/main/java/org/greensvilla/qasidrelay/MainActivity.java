@@ -76,6 +76,7 @@ public class MainActivity extends Activity {
     private Button clearActivityButton;
     private boolean showAllActivity;
     private TextView configStatusText;
+    private LinearLayout statusDetailsContainer;
     private TextView messagingStatusText;
     private TextView permissionStatusText;
     private TextView serviceStatusText;
@@ -176,16 +177,27 @@ public class MainActivity extends Activity {
         suggestedActionButton = secondaryButton("Review setup");
         suggestedActionButton.setOnClickListener(view -> performSuggestedAction());
         statusPanel.addView(suggestedActionButton);
-        statusPanel.addView(sectionTitle("Details"));
-        configStatusText = statusRow(statusPanel, "Configuration");
-        messagingStatusText = statusRow(statusPanel, "Messaging");
-        permissionStatusText = statusRow(statusPanel, "Permissions");
-        serviceStatusText = statusRow(statusPanel, "Service");
-        pollStatusText = statusRow(statusPanel, "Polling");
-        gatewayStatusText = statusRow(statusPanel, "Gateway");
-        gatewayPolicyText = statusRow(statusPanel, "Destination policy");
-        messageStatusText = statusRow(statusPanel, "Last delivery");
-        queueStatusText = statusRow(statusPanel, "Report queue");
+        Button detailsToggle = secondaryButton("Show status details");
+        statusPanel.addView(detailsToggle);
+        statusDetailsContainer = new LinearLayout(this);
+        statusDetailsContainer.setOrientation(LinearLayout.VERTICAL);
+        statusDetailsContainer.setVisibility(View.GONE);
+        detailsToggle.setOnClickListener(view -> {
+            boolean expanded = statusDetailsContainer.getVisibility() != View.VISIBLE;
+            statusDetailsContainer.setVisibility(expanded ? View.VISIBLE : View.GONE);
+            detailsToggle.setText(expanded ? "Hide status details" : "Show status details");
+        });
+        statusDetailsContainer.addView(sectionTitle("Details"));
+        configStatusText = statusRow(statusDetailsContainer, "Configuration");
+        messagingStatusText = statusRow(statusDetailsContainer, "Messaging");
+        permissionStatusText = statusRow(statusDetailsContainer, "Permissions");
+        serviceStatusText = statusRow(statusDetailsContainer, "Service");
+        pollStatusText = statusRow(statusDetailsContainer, "Polling");
+        gatewayStatusText = statusRow(statusDetailsContainer, "Gateway");
+        gatewayPolicyText = statusRow(statusDetailsContainer, "Destination policy");
+        messageStatusText = statusRow(statusDetailsContainer, "Last delivery");
+        queueStatusText = statusRow(statusDetailsContainer, "Report queue");
+        statusPanel.addView(statusDetailsContainer);
         layout.addView(statusPanel);
 
         LinearLayout configPanel = panel();
@@ -217,7 +229,6 @@ public class MainActivity extends Activity {
         forgetServerButton.setTextColor(COLOR_DANGER);
         forgetServerButton.setOnClickListener(view -> runProtectedAction(this::confirmForgetServer));
         configPanel.addView(forgetServerButton);
-        layout.addView(configPanel);
 
         LinearLayout controlPanel = panel();
         controlPanel.addView(sectionTitle("Messaging control"));
@@ -237,6 +248,7 @@ public class MainActivity extends Activity {
         noticeText.setPadding(0, dp(12), 0, 0);
         controlPanel.addView(noticeText);
         layout.addView(controlPanel);
+        layout.addView(configPanel);
 
         LinearLayout activityPanel = panel();
         activityPanel.addView(sectionTitle("Recent activity"));
