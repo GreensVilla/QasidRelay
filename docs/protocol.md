@@ -123,3 +123,16 @@ The server should enforce:
 - OTP/body templates owned by the server;
 - per-recipient and per-device throttles;
 - no bulk marketing endpoints.
+
+## Outbound Android SMS callback details
+
+The optional `detail` in a terminal `failed` status should be a bounded,
+safe diagnostic category, never a raw exception or SMS content. The current
+Android client reports known categories `RESULT_ERROR_NO_SERVICE`,
+`RESULT_ERROR_RADIO_OFF`, `RESULT_ERROR_NULL_PDU`,
+`RESULT_ERROR_GENERIC_FAILURE`, and substitutes `SMS_RESULT_OTHER`
+for unknown callback codes. Synchronous send exceptions use `SEND_EXCEPTION`.
+The stale-attempt category remains
+`stale_sms_attempt_without_android_callback`. Servers should accept
+future safe categories rather than hardcode one exhaustive enum.
+An Android `sent` status does not prove delivery to the recipient.
