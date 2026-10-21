@@ -1,8 +1,18 @@
 # 02 — Redacted copy diagnostics
 
-Status: `PLANNED`
+Status: `IN PROGRESS` (initial copy action committed)
 
 Priority: `P0`
+
+## Implemented so far
+
+- Redacted clipboard diagnostics with a generated support correlation ID.
+- App/device/version, host-only server name, permission, battery, coarse relay
+  state, polling timestamps and pending report count.
+- Allowlisted serializer and JVM tests that reject raw sensitive status strings.
+
+Pending: install/update metadata, optional preview, real-device clipboard
+validation and broader privacy review of diagnostic device information.
 
 ## Goal
 
