@@ -64,3 +64,11 @@ post-reboot SMS sending.
   service. Already-submitted Android SMS callbacks may still complete.
 - `sent` status means Android accepted all SMS parts through sent callbacks; it
   is not a carrier delivery receipt.
+
+## Operator UX battery guidance (unreleased)
+
+The operator screen checks the Android battery optimization API and offers a
+shortcut to system battery settings. It never automatically requests an
+exemption, and no brand-specific background reliability is claimed without
+testing. Messaging still requires an explicit foreground restart after reboot
+or app replacement.
