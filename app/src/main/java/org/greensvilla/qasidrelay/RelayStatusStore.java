@@ -65,6 +65,7 @@ final class RelayStatusStore {
     }
 
     static void markMessageQueued(Context context, PendingMessage message) {
+        RecentActivityStore.record(context, message.id, "sending", null);
         edit(context)
             .putString(KEY_LAST_MESSAGE_ID, message.id)
             .putString(KEY_LAST_MESSAGE_STATUS, "queued")
@@ -74,6 +75,7 @@ final class RelayStatusStore {
     }
 
     static void markMessageSkipped(Context context, PendingMessage message, String detail) {
+        RecentActivityStore.record(context, message.id, "skipped", null);
         edit(context)
             .putString(KEY_LAST_MESSAGE_ID, message.id)
             .putString(KEY_LAST_MESSAGE_STATUS, "skipped")
@@ -93,6 +95,7 @@ final class RelayStatusStore {
     }
 
     static void markStatusReported(Context context, String messageId, String status) {
+        RecentActivityStore.record(context, messageId, "reported", null);
         edit(context)
             .putString(KEY_LAST_MESSAGE_ID, messageId)
             .putString(KEY_LAST_MESSAGE_STATUS, status)

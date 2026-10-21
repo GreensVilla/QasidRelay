@@ -87,6 +87,7 @@ public class RelayService extends Service {
                     for (PendingMessage message : messages) {
                         String messageValidationError = message.validationError();
                         if (messageValidationError != null) {
+                            RecentActivityStore.record(this, message.id, "failed", null);
                             StatusReportQueue.enqueue(this, message.id, "failed", messageValidationError);
                             StatusReportQueue.flush(this, client);
                             continue;
@@ -94,6 +95,7 @@ public class RelayService extends Service {
                         if (SmsAttemptStore.exists(this, message.id)) {
                             if (SmsAttemptStore.isStale(this, message.id, System.currentTimeMillis())) {
                                 SmsAttemptStore.remove(this, message.id);
+                                RecentActivityStore.record(this, message.id, "failed", STALE_SMS_ATTEMPT_DETAIL);
                                 StatusReportQueue.enqueue(this, message.id, "failed", STALE_SMS_ATTEMPT_DETAIL);
                                 StatusReportQueue.flush(this, client);
                                 RelayStatusStore.markMessageSkipped(
@@ -120,7 +122,8 @@ public class RelayService extends Service {
                             RelayStatusStore.markMessageQueued(this, message);
                         } catch (Exception sendError) {
                             SmsAttemptStore.remove(this, message.id);
-                            StatusReportQueue.enqueue(this, message.id, "failed", sendError.getClass().getSimpleName());
+                            RecentActivityStore.record(this, message.id, "failed", "SEND_EXCEPTION");
+                            StatusReportQueue.enqueue(this, message.id, "failed", "SEND_EXCEPTION");
                             StatusReportQueue.flush(this, client);
                         }
                     }

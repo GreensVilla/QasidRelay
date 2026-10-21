@@ -1,10 +1,8 @@
 package org.greensvilla.qasidrelay;
 
-import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.telephony.SmsManager;
 
 public final class SmsStatusReceiver extends BroadcastReceiver {
     static final String ACTION_SMS_SENT = "org.greensvilla.qasidrelay.SMS_SENT";
@@ -28,12 +26,13 @@ public final class SmsStatusReceiver extends BroadcastReceiver {
             partIndex,
             totalParts,
             resultCode,
-            failureDetail(resultCode)
+            SmsFailureGuide.forResult(resultCode).gatewayCode
         );
         if (completed == null) {
             return;
         }
 
+        RecentActivityStore.record(context, messageId, completed.status, completed.detail);
         StatusReportQueue.enqueue(context, messageId, completed.status, completed.detail);
         RelayStatusStore.markReportQueued(context, messageId, completed.status);
         GatewayConfig config = GatewayConfig.load(context);
@@ -51,21 +50,4 @@ public final class SmsStatusReceiver extends BroadcastReceiver {
         }, "QasidRelayStatusReporter").start();
     }
 
-    private String failureDetail(int resultCode) {
-        if (resultCode == Activity.RESULT_OK) {
-            return null;
-        }
-        switch (resultCode) {
-            case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
-                return "RESULT_ERROR_GENERIC_FAILURE";
-            case SmsManager.RESULT_ERROR_NO_SERVICE:
-                return "RESULT_ERROR_NO_SERVICE";
-            case SmsManager.RESULT_ERROR_NULL_PDU:
-                return "RESULT_ERROR_NULL_PDU";
-            case SmsManager.RESULT_ERROR_RADIO_OFF:
-                return "RESULT_ERROR_RADIO_OFF";
-            default:
-                return "SMS send result code " + resultCode;
-        }
-    }
 }

@@ -40,6 +40,7 @@ final class StatusReportQueue {
         }
 
         save(context, updated);
+        RecentActivityStore.record(context, messageId, "report pending", detail);
         RelayMessageLedger.remember(context, messageId);
         RelayStatusStore.markPendingReportCount(context, updated.length());
     }
