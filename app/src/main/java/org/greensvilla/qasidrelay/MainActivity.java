@@ -756,6 +756,8 @@ public class MainActivity extends Activity {
                 GatewayConfig.forget(this);
                 RelayMessageLedger.clear(this);
                 RecentActivityStore.clear(this);
+                getSharedPreferences(GatewayConfig.PREFS, Context.MODE_PRIVATE)
+                    .edit().remove(TEST_PREF).apply();
                 RelayStatusStore.resetForNewGateway(this);
                 baseUrlInput.setText("");
                 deviceIdInput.setText("");
@@ -791,6 +793,8 @@ public class MainActivity extends Activity {
                 // Only when settled and disabled: old IDs/status belong to a different gateway.
                 RelayMessageLedger.clear(this);
                 RecentActivityStore.clear(this);
+                getSharedPreferences(GatewayConfig.PREFS, Context.MODE_PRIVATE)
+                    .edit().remove(TEST_PREF).apply();
                 RelayStatusStore.resetForNewGateway(this);
             }
             secretInput.setText("");
