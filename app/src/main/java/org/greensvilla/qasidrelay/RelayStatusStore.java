@@ -18,6 +18,21 @@ final class RelayStatusStore {
     private RelayStatusStore() {
     }
 
+    static void resetForNewGateway(Context context) {
+        edit(context)
+            .putBoolean(KEY_SERVICE_RUNNING, false)
+            .putString(KEY_STATE, "Stopped")
+            .putString(KEY_DETAIL, "Configure a trusted gateway before enabling messaging.")
+            .remove(KEY_LAST_POLL_AT)
+            .remove(KEY_LAST_SUCCESS_AT)
+            .remove(KEY_LAST_MESSAGE_ID)
+            .remove(KEY_LAST_MESSAGE_STATUS)
+            .remove(KEY_LAST_MESSAGE_DETAIL)
+            .remove(KEY_LAST_MESSAGE_AT)
+            .putInt(KEY_PENDING_REPORT_COUNT, 0)
+            .apply();
+    }
+
     static void markServiceRunning(Context context, boolean running) {
         edit(context)
             .putBoolean(KEY_SERVICE_RUNNING, running)

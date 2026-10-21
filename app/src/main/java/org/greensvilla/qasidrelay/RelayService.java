@@ -85,6 +85,10 @@ public class RelayService extends Service {
                     List<PendingMessage> messages = client.fetchPending();
                     RelayStatusStore.markPollSucceeded(this, messages.size());
                     for (PendingMessage message : messages) {
+                        // A foreground operator stop must prevent additional queued sends.
+                        if (!running || !GatewayConfig.load(this).messagingEnabled) {
+                            break;
+                        }
                         String messageValidationError = message.validationError();
                         if (messageValidationError != null) {
                             RecentActivityStore.record(this, message.id, "failed", null);
@@ -118,6 +122,9 @@ public class RelayService extends Service {
                         }
 
                         try {
+                            if (!running || !GatewayConfig.load(this).messagingEnabled) {
+                                break;
+                            }
                             sender.send(this, message);
                             RelayStatusStore.markMessageQueued(this, message);
                         } catch (Exception sendError) {
