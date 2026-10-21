@@ -3,6 +3,17 @@ package org.greensvilla.qasidrelay;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager.NameNotFoundException;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.net.Uri;
+import android.os.PowerManager;
+import android.provider.Settings;
+import android.view.View;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -28,6 +39,8 @@ public class MainActivity extends Activity {
     private static final int COLOR_BORDER = 0xFFE2E8F0;
     private static final int COLOR_ACCENT = 0xFF2563EB;
     private static final int COLOR_DANGER = 0xFFB91C1C;
+    private static final int COLOR_SUCCESS = 0xFF166534;
+    private static final int COLOR_WARNING = 0xFF92400E;
 
     private final Handler refreshHandler = new Handler(Looper.getMainLooper());
     private final Runnable refreshRunnable = new Runnable() {
@@ -43,6 +56,10 @@ public class MainActivity extends Activity {
     private EditText secretInput;
     private TextView secretHelpText;
     private TextView noticeText;
+    private TextView summaryTitleText;
+    private TextView summaryDescriptionText;
+    private Button suggestedActionButton;
+    private TextView batteryStatusText;
     private TextView configStatusText;
     private TextView messagingStatusText;
     private TextView permissionStatusText;
@@ -115,7 +132,21 @@ public class MainActivity extends Activity {
         layout.addView(subtitle);
 
         LinearLayout statusPanel = panel();
-        statusPanel.addView(sectionTitle("Relay status"));
+        statusPanel.addView(helper("RELAY OVERVIEW"));
+        summaryTitleText = new TextView(this);
+        summaryTitleText.setTextSize(24);
+        summaryTitleText.setTypeface(null, Typeface.BOLD);
+        summaryTitleText.setTextColor(COLOR_TEXT);
+        summaryTitleText.setPadding(0, dp(7), 0, dp(4));
+        statusPanel.addView(summaryTitleText);
+        summaryDescriptionText = helper("");
+        summaryDescriptionText.setTextSize(14);
+        summaryDescriptionText.setPadding(0, 0, 0, dp(8));
+        statusPanel.addView(summaryDescriptionText);
+        suggestedActionButton = secondaryButton("Review setup");
+        suggestedActionButton.setOnClickListener(view -> performSuggestedAction());
+        statusPanel.addView(suggestedActionButton);
+        statusPanel.addView(sectionTitle("Details"));
         configStatusText = statusRow(statusPanel, "Configuration");
         messagingStatusText = statusRow(statusPanel, "Messaging");
         permissionStatusText = statusRow(statusPanel, "Permissions");
@@ -166,6 +197,24 @@ public class MainActivity extends Activity {
         controlPanel.addView(noticeText);
         layout.addView(controlPanel);
 
+        LinearLayout diagnosticsPanel = panel();
+        diagnosticsPanel.addView(sectionTitle("Support & diagnostics"));
+        diagnosticsPanel.addView(helper("Copy a redacted status summary without relay keys, message contents, or recipient numbers."));
+        Button copyDiagnosticsButton = secondaryButton("Copy diagnostics");
+        copyDiagnosticsButton.setOnClickListener(view -> copyDiagnostics());
+        diagnosticsPanel.addView(copyDiagnosticsButton);
+        diagnosticsPanel.addView(helper("Only share diagnostics with trusted support. Review before sending."));
+        layout.addView(diagnosticsPanel);
+
+        LinearLayout batteryPanel = panel();
+        batteryPanel.addView(sectionTitle("Battery & background reliability"));
+        batteryStatusText = helper("");
+        batteryPanel.addView(batteryStatusText);
+        Button batterySettingsButton = secondaryButton("Open battery settings");
+        batterySettingsButton.setOnClickListener(view -> openBatterySettings());
+        batteryPanel.addView(batterySettingsButton);
+        layout.addView(batteryPanel);
+
         TextView policy = helper("Transactional SMS only: OTP, password recovery, operational alerts, and private pilot notifications. The app does not request READ_SMS and does not expose an inbound phone API.");
         policy.setPadding(0, 0, 0, dp(12));
         layout.addView(policy);
@@ -177,7 +226,11 @@ public class MainActivity extends Activity {
     private LinearLayout panel() {
         LinearLayout panel = new LinearLayout(this);
         panel.setOrientation(LinearLayout.VERTICAL);
-        panel.setBackgroundColor(COLOR_PANEL);
+        GradientDrawable background = new GradientDrawable();
+        background.setColor(COLOR_PANEL);
+        background.setCornerRadius(dp(14));
+        background.setStroke(dp(1), COLOR_BORDER);
+        panel.setBackground(background);
         panel.setPadding(dp(16), dp(14), dp(16), dp(14));
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -195,6 +248,7 @@ public class MainActivity extends Activity {
         TextView section = new TextView(this);
         section.setText(text);
         section.setTextSize(16);
+        section.setTypeface(null, Typeface.BOLD);
         section.setTextColor(COLOR_TEXT);
         section.setPadding(0, 0, 0, dp(8));
         return section;
@@ -240,7 +294,9 @@ public class MainActivity extends Activity {
         Button button = new Button(this);
         button.setText(text);
         button.setTextColor(0xFFFFFFFF);
-        button.setBackgroundColor(COLOR_ACCENT);
+        button.setBackground(roundedBackground(COLOR_ACCENT));
+        button.setAllCaps(false);
+        button.setMinHeight(dp(46));
         return button;
     }
 
@@ -248,8 +304,91 @@ public class MainActivity extends Activity {
         Button button = new Button(this);
         button.setText(text);
         button.setTextColor(COLOR_TEXT);
-        button.setBackgroundColor(COLOR_BORDER);
+        button.setBackground(roundedBackground(COLOR_BORDER));
+        button.setAllCaps(false);
+        button.setMinHeight(dp(46));
         return button;
+    }
+
+    private GradientDrawable roundedBackground(int color) {
+        GradientDrawable background = new GradientDrawable();
+        background.setColor(color);
+        background.setCornerRadius(dp(10));
+        return background;
+    }
+
+    private void performSuggestedAction() {
+        GatewayConfig config = GatewayConfig.load(this);
+        RelayStatusStore.Snapshot status = RelayStatusStore.load(this);
+        OperatorStatus.Presentation state = OperatorStatus.resolve(
+            config.isReady(), hasSmsPermission(), config.messagingEnabled,
+            status.serviceRunning, status.state, status.lastSuccessAt,
+            System.currentTimeMillis(), config.pollSeconds
+        );
+        switch (state.action) {
+            case CONFIGURE:
+                baseUrlInput.requestFocus();
+                showNotice("Check your server URL, phone name, and private relay key below.");
+                break;
+            case PERMISSION:
+                requestRequiredPermissions();
+                break;
+            case ENABLE:
+            case START:
+                toggleMessaging();
+                break;
+            default:
+                break;
+        }
+    }
+
+    private boolean isBatteryExempt() {
+        PowerManager manager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        return manager != null && manager.isIgnoringBatteryOptimizations(getPackageName());
+    }
+
+    private void openBatterySettings() {
+        try {
+            startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
+        } catch (RuntimeException error) {
+            try {
+                Intent details = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                details.setData(Uri.parse("package:" + getPackageName()));
+                startActivity(details);
+            } catch (RuntimeException fallbackError) {
+                showNotice("Battery settings could not be opened. Open Android Settings, then find QasidRelay under Apps.");
+            }
+        }
+    }
+
+    private void copyDiagnostics() {
+        GatewayConfig config = GatewayConfig.load(this);
+        RelayStatusStore.Snapshot status = RelayStatusStore.load(this);
+        String versionName = "unknown";
+        int versionCode = 0;
+        try {
+            PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), 0);
+            versionName = info.versionName;
+            versionCode = info.versionCode;
+        } catch (NameNotFoundException ignored) {
+            // Diagnostics are still useful without package metadata.
+        }
+        String report = SafeDiagnostics.create(
+            java.util.UUID.randomUUID().toString(), versionName, versionCode,
+            Build.MANUFACTURER, Build.MODEL, Build.VERSION.SDK_INT,
+            SafeDiagnostics.safeServerHost(config.baseUrl),
+            config.messagingEnabled, status.serviceRunning, hasSmsPermission(),
+            hasNotificationPermission(), isBatteryExempt(), status.state,
+            status.lastPollAt, status.lastSuccessAt, status.lastMessageStatus,
+            status.pendingReportCount
+        );
+        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        if (clipboard == null) {
+            showNotice("Clipboard unavailable. Diagnostics were not copied.");
+            return;
+        }
+        clipboard.setPrimaryClip(ClipData.newPlainText("QasidRelay diagnostics", report));
+        Toast.makeText(this, "Redacted diagnostics copied. Review before sharing.", Toast.LENGTH_LONG).show();
     }
 
     private boolean saveConfig(boolean showToast) {
@@ -393,6 +532,31 @@ public class MainActivity extends Activity {
         RelayStatusStore.Snapshot status = RelayStatusStore.load(this);
         String validationError = config.validationError();
         boolean serviceNeedsStart = config.messagingEnabled && !status.serviceRunning;
+        OperatorStatus.Presentation summary = OperatorStatus.resolve(
+            validationError == null, hasSmsPermission(), config.messagingEnabled,
+            status.serviceRunning, status.state, status.lastSuccessAt,
+            System.currentTimeMillis(), config.pollSeconds
+        );
+        if (summaryTitleText != null) {
+            summaryTitleText.setText(summary.title);
+            summaryTitleText.setTextColor(summary.level == OperatorStatus.Level.READY
+                ? COLOR_SUCCESS : (summary.level == OperatorStatus.Level.BLOCKED
+                ? COLOR_DANGER : (summary.level == OperatorStatus.Level.WARNING
+                ? COLOR_WARNING : COLOR_TEXT)));
+        }
+        if (summaryDescriptionText != null) {
+            summaryDescriptionText.setText(summary.description);
+        }
+        if (suggestedActionButton != null) {
+            suggestedActionButton.setVisibility(summary.action == OperatorStatus.Action.NONE
+                ? View.GONE : View.VISIBLE);
+            suggestedActionButton.setText(summary.actionLabel);
+        }
+        if (batteryStatusText != null) {
+            batteryStatusText.setText(isBatteryExempt()
+                ? "Battery optimization exemption detected. Confirm polling still works with the screen off."
+                : "Battery settings may interrupt polling on some phones. Verify that the last successful poll keeps updating while the relay is active.");
+        }
         if (configStatusText != null) {
             configStatusText.setText("Configuration: " + (validationError == null ? "Ready" : validationError));
         }
@@ -406,19 +570,19 @@ public class MainActivity extends Activity {
                 ", notifications " + granted(hasNotificationPermission()));
         }
         if (serviceStatusText != null) {
-            serviceStatusText.setText("Service: " + status.state + "\n" + status.detail);
+            serviceStatusText.setText("Service: " + SafeDiagnostics.safeState(status.state));
         }
         if (pollStatusText != null) {
-            pollStatusText.setText("Polling: last poll " + formatTime(status.lastPollAt) +
-                ", last success " + formatTime(status.lastSuccessAt));
+            pollStatusText.setText("Last check: " + relativeTime(status.lastPollAt) +
+                "\nLast successful check: " + relativeTime(status.lastSuccessAt));
         }
         if (messageStatusText != null) {
             if (status.lastMessageId.isEmpty()) {
                 messageStatusText.setText("Last delivery: none");
             } else {
-                messageStatusText.setText("Last delivery: " + status.lastMessageId + " -> " +
-                    status.lastMessageStatus + "\n" + status.lastMessageDetail +
-                    "\n" + formatTime(status.lastMessageAt));
+                messageStatusText.setText("Last delivery status: " +
+                    SafeDiagnostics.safeMessageStatus(status.lastMessageStatus) +
+                    " (" + relativeTime(status.lastMessageAt) + ")");
             }
         }
         if (queueStatusText != null) {
@@ -427,13 +591,13 @@ public class MainActivity extends Activity {
         if (messagingToggleButton != null) {
             if (config.messagingEnabled && status.serviceRunning) {
                 messagingToggleButton.setText("Disable messaging");
-                messagingToggleButton.setBackgroundColor(COLOR_DANGER);
+                messagingToggleButton.setBackground(roundedBackground(COLOR_DANGER));
             } else if (config.messagingEnabled) {
                 messagingToggleButton.setText("Start relay service");
-                messagingToggleButton.setBackgroundColor(COLOR_ACCENT);
+                messagingToggleButton.setBackground(roundedBackground(COLOR_ACCENT));
             } else {
                 messagingToggleButton.setText("Enable messaging");
-                messagingToggleButton.setBackgroundColor(COLOR_ACCENT);
+                messagingToggleButton.setBackground(roundedBackground(COLOR_ACCENT));
             }
         }
         if (messagingHelpText != null) {
@@ -461,6 +625,24 @@ public class MainActivity extends Activity {
             return "never";
         }
         return DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM).format(new Date(timestampMillis));
+    }
+
+    private String relativeTime(long timestampMillis) {
+        if (timestampMillis <= 0L) {
+            return "never";
+        }
+        long elapsed = Math.max(0L, System.currentTimeMillis() - timestampMillis);
+        String relative;
+        if (elapsed < 60_000L) {
+            relative = "just now";
+        } else if (elapsed < 3_600_000L) {
+            relative = (elapsed / 60_000L) + " min ago";
+        } else if (elapsed < 86_400_000L) {
+            relative = (elapsed / 3_600_000L) + " hr ago";
+        } else {
+            relative = (elapsed / 86_400_000L) + " days ago";
+        }
+        return relative + " (" + formatTime(timestampMillis) + ")";
     }
 
     private String safeDetail(RuntimeException error) {
