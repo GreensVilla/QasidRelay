@@ -58,6 +58,7 @@ public class RelayService extends Service {
         RelayStatusStore.markServiceRunning(this, true);
         try {
             while (running) {
+                refreshNotification();
                 GatewayConfig config = GatewayConfig.load(this);
                 if (!config.messagingEnabled) {
                     RelayStatusStore.markWaiting(this, "Messaging is disabled by the operator; pending jobs will not be fetched.");
@@ -172,6 +173,14 @@ public class RelayService extends Service {
         }
     }
 
+    private void refreshNotification() {
+        if (!running) return;
+        NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (manager != null) {
+            manager.notify(100, notification());
+        }
+    }
+
     private Notification notification() {
         Notification.Builder builder = Build.VERSION.SDK_INT >= 26
             ? new Notification.Builder(this, CHANNEL_ID)
@@ -183,9 +192,11 @@ public class RelayService extends Service {
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
+        RelayStatusStore.Snapshot state = RelayStatusStore.load(this);
         return builder
             .setContentTitle(getString(R.string.app_name))
-            .setContentText(getString(R.string.relay_running))
+            .setContentText(RelayNotificationText.summary(
+                state.serviceRunning, state.gatewayCategory, state.pendingReportCount))
             .setSmallIcon(android.R.drawable.stat_sys_upload)
             .setContentIntent(contentIntent)
             .setOngoing(true)
