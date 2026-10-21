@@ -1,8 +1,20 @@
 # 11 — Better foreground notification
 
-Status: `PLANNED`
+Status: `IN PROGRESS` (redacted status notification implemented)
 
 Priority: `P2`
+
+## Implemented so far
+
+- Foreground notification opens the app as before, now showing a short,
+  allowlisted gateway state or bounded pending report count.
+- Refreshes within the existing foreground worker loop without extra wakeups.
+- No raw gateway error, recipient phone, OTP, message body, or unsafe action.
+- `START_NOT_STICKY` avoids requested automatic restart after process death.
+- JVM tests assert unknown strings are not echoed.
+
+Still pending: notification visibility/screen-reader checks on real Android,
+including Android 13+ permission behavior, and vendor background tests.
 
 ## Goal
 
