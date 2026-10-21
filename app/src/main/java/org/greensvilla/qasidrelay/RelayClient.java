@@ -18,12 +18,18 @@ import org.json.JSONObject;
 final class RelayClient {
     private static final String TAG = "QasidRelay";
     private final GatewayConfig config;
+    private String lastPolicySummary = GatewayPolicy.NOT_REPORTED;
 
     RelayClient(GatewayConfig config) {
         this.config = config;
     }
 
+    String lastPolicySummary() {
+        return lastPolicySummary;
+    }
+
     List<PendingMessage> fetchPending() throws Exception {
+        lastPolicySummary = GatewayPolicy.NOT_REPORTED;
         String encodedDeviceId = URLEncoder.encode(config.deviceId, "UTF-8");
         String path = "/api/qasid-relay/v1/messages/pending?device_id=" + encodedDeviceId + "&limit=3";
         HttpURLConnection connection = null;
@@ -38,7 +44,13 @@ final class RelayClient {
             }
 
             String body = read(connection.getInputStream());
-            JSONArray messages = new JSONObject(body).optJSONArray("messages");
+            JSONObject payload = new JSONObject(body);
+            JSONObject policy = payload.optJSONObject("destination_policy");
+            if (policy != null) {
+                lastPolicySummary = GatewayPolicy.summary(
+                    policy.optString("mode", ""), policy.optString("country_prefix", ""));
+            }
+            JSONArray messages = payload.optJSONArray("messages");
             List<PendingMessage> results = new ArrayList<>();
             if (messages == null) {
                 return results;
