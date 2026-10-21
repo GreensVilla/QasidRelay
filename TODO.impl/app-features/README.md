@@ -1,12 +1,12 @@
 # QasidRelay app feature backlog
 
-Status: `IN PROGRESS` — tasks 01–07, 12 and 15 partially implemented
+Status: `IN PROGRESS` — initial implementation for tasks 01–07, 09–13 and 15; tasks 08 and 14 deferred
 
 This directory tracks planned Android app features for QasidRelay after the
 `v0.1.7` signed prerelease and first real-device GreensVilla staging OTP smoke
 success on 2026-07-29.
 
-Initial code and JVM tests are available for tasks 01–07, 12 and 15, but they do not
+Initial code and JVM tests are available for tasks 01–07, 09–13 and 15, but they do not
 satisfy all acceptance criteria. Real-device screenshots, clipboard testing,
 richer gateway status and vendor battery evidence are outstanding.
 
