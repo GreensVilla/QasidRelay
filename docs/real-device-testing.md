@@ -171,3 +171,14 @@ checklist is not evidence that real-device tests have already passed.
    operator stop takes effect. Capture any observed race separately.
 7. Never run destructive reset tests using live OTPs, customer messages,
    production gateway credentials or a real user account.
+
+## Installed version and official releases (unreleased)
+
+1. On the app main screen, verify installed version and build match the
+   installed APK's Android package metadata.
+2. Tap **Open official releases** and confirm the trusted browser opens
+   `https://github.com/GreensVilla/QasidRelay/releases`.
+3. Confirm no automatic download, installation or background release-check
+   request takes place, and no relay secret/device ID is sent as URL parameters.
+4. Confirm the help text distinguishes signed release updates from older
+   debug-signed APKs that may require one uninstall.
