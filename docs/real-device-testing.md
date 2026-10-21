@@ -105,3 +105,32 @@ UI so post-reboot SMS sending never happens silently.
   foreground service alive.
 - Reboot/package-replace behavior, including whether the phone shows `Start
   relay service` before polling resumes.
+
+## Operator UI/UX smoke checklist (unreleased)
+
+Run these checks on the operator UX branch before publishing a signed APK:
+
+1. Without a server, confirm **Needs setup** and **Review server connection**
+   appear and the action focuses setup. Never photograph or expose the key.
+2. With valid setup and missing SMS permission, confirm **Needs SMS permission**
+   and its permission action; sending stays blocked.
+3. With permission but messaging disabled, confirm **Messaging paused**.
+   **Enable messaging** must be an explicit operator action.
+4. With messaging enabled and service stopped, confirm **Needs manual restart**.
+   The app must not silently resume polling.
+5. With successful gateway polling, confirm **Ready** and recent check times.
+   Disable connectivity and confirm a warning appears instead of false health.
+6. Confirm the last SMS status and report queue show no destination number,
+   message content or message ID.
+7. Copy diagnostics with and without configured gateway. Paste into an
+   offline editor and confirm it contains no secret, setup QR/deep link,
+   signature, OTP, message body, recipient, raw error message or message ID.
+   Review clipboard text before sharing with trusted support.
+8. Open battery settings and confirm the settings/fallback launches. Record
+   the actual system behavior; no exemption should be granted automatically.
+9. Test an older/small phone, large font scaling, screen rotation, foreground
+   return and the Android notification. Check navigation and button visibility.
+
+Record Android version, device model, screenshots with secrets redacted,
+significant failures and any observed battery/poll interruptions. This
+checklist is not evidence that real-device tests have already passed.
