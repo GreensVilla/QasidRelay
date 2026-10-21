@@ -3,6 +3,7 @@ package org.greensvilla.qasidrelay;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.KeyguardManager;
 import android.content.Intent;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -66,6 +67,10 @@ public class MainActivity extends Activity {
     private TextView testProgressText;
     private Button testToggleButton;
     private static final String TEST_PREF = "smoke_test_started_at";
+    private static final String LOCK_PREF = "operator_device_credential_lock";
+    private static final int UNLOCK_REQUEST = 1419;
+    private Runnable pendingUnlockAction;
+    private Button operatorLockButton;
     private LinearLayout activityList;
     private Button activityToggleButton;
     private Button clearActivityButton;
@@ -86,6 +91,19 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         render();
         applySetupIntent(getIntent());
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != UNLOCK_REQUEST) return;
+        Runnable action = pendingUnlockAction;
+        pendingUnlockAction = null; // Fail closed if Android cancels authentication.
+        if (resultCode == Activity.RESULT_OK && action != null) {
+            action.run();
+        } else {
+            showNotice("Device authentication was cancelled. No changes made.");
+        }
     }
 
     @Override
@@ -186,7 +204,7 @@ public class MainActivity extends Activity {
         configPanel.addView(secretHelpText);
 
         Button saveButton = primaryButton("Save configuration");
-        saveButton.setOnClickListener(view -> saveConfig(true));
+        saveButton.setOnClickListener(view -> runProtectedAction(() -> saveConfig(true)));
         configPanel.addView(saveButton);
 
         Button checkSetupButton = secondaryButton("Check setup locally");
@@ -195,7 +213,7 @@ public class MainActivity extends Activity {
 
         Button forgetServerButton = secondaryButton("Forget this server");
         forgetServerButton.setTextColor(COLOR_DANGER);
-        forgetServerButton.setOnClickListener(view -> confirmForgetServer());
+        forgetServerButton.setOnClickListener(view -> runProtectedAction(this::confirmForgetServer));
         configPanel.addView(forgetServerButton);
         layout.addView(configPanel);
 
@@ -206,7 +224,7 @@ public class MainActivity extends Activity {
         controlPanel.addView(permissionButton);
 
         messagingToggleButton = primaryButton("Enable messaging");
-        messagingToggleButton.setOnClickListener(view -> toggleMessaging());
+        messagingToggleButton.setOnClickListener(view -> runProtectedAction(this::toggleMessaging));
         controlPanel.addView(messagingToggleButton);
 
         messagingHelpText = helper("");
@@ -231,7 +249,7 @@ public class MainActivity extends Activity {
         });
         activityPanel.addView(activityToggleButton);
         clearActivityButton = secondaryButton("Clear local activity");
-        clearActivityButton.setOnClickListener(view -> confirmClearActivity());
+        clearActivityButton.setOnClickListener(view -> runProtectedAction(this::confirmClearActivity));
         activityPanel.addView(clearActivityButton);
         layout.addView(activityPanel);
 
@@ -239,10 +257,18 @@ public class MainActivity extends Activity {
         diagnosticsPanel.addView(sectionTitle("Support & diagnostics"));
         diagnosticsPanel.addView(helper("Copy a redacted status summary without relay keys, message contents, or recipient numbers."));
         Button copyDiagnosticsButton = secondaryButton("Copy diagnostics");
-        copyDiagnosticsButton.setOnClickListener(view -> copyDiagnostics());
+        copyDiagnosticsButton.setOnClickListener(view -> runProtectedAction(this::copyDiagnostics));
         diagnosticsPanel.addView(copyDiagnosticsButton);
         diagnosticsPanel.addView(helper("Only share diagnostics with trusted support. Review before sending."));
         layout.addView(diagnosticsPanel);
+
+        LinearLayout accessPanel = panel();
+        accessPanel.addView(sectionTitle("Operator lock"));
+        accessPanel.addView(helper("Optionally require the phone's own screen-lock authentication before starting/stopping SMS, changing setup, copying diagnostics or clearing history. Relay polling continues without unlocking."));
+        operatorLockButton = secondaryButton("Enable operator lock");
+        operatorLockButton.setOnClickListener(view -> changeOperatorLock());
+        accessPanel.addView(operatorLockButton);
+        layout.addView(accessPanel);
 
         LinearLayout batteryPanel = panel();
         batteryPanel.addView(sectionTitle("Battery & background reliability"));
@@ -398,10 +424,63 @@ public class MainActivity extends Activity {
                 break;
             case ENABLE:
             case START:
-                toggleMessaging();
+                runProtectedAction(this::toggleMessaging);
                 break;
             default:
                 break;
+        }
+    }
+
+    private boolean operatorLockEnabled() {
+        return getSharedPreferences(GatewayConfig.PREFS, Context.MODE_PRIVATE)
+            .getBoolean(LOCK_PREF, false);
+    }
+
+    private boolean deviceIsSecure() {
+        KeyguardManager manager = (KeyguardManager) getSystemService(KEYGUARD_SERVICE);
+        return manager != null && manager.isDeviceSecure();
+    }
+
+    private void runProtectedAction(Runnable action) {
+        if (!OperatorLockPolicy.needsCredential(operatorLockEnabled())) {
+            action.run();
+            return;
+        }
+        if (!deviceIsSecure()) {
+            showNotice("Operator lock requires a secure Android screen lock. Set one in Android Settings.");
+            return;
+        }
+        KeyguardManager manager = (KeyguardManager) getSystemService(KEYGUARD_SERVICE);
+        Intent unlock = manager.createConfirmDeviceCredentialIntent(
+            "QasidRelay operator lock", "Confirm device unlock before changing relay settings");
+        if (unlock == null || pendingUnlockAction != null) {
+            showNotice("Unable to confirm device identity. No change was made.");
+            return;
+        }
+        pendingUnlockAction = action;
+        try {
+            startActivityForResult(unlock, UNLOCK_REQUEST);
+        } catch (RuntimeException error) {
+            pendingUnlockAction = null;
+            showNotice("Device authentication unavailable. No change was made.");
+        }
+    }
+
+    private void changeOperatorLock() {
+        if (operatorLockEnabled()) {
+            runProtectedAction(() -> {
+                getSharedPreferences(GatewayConfig.PREFS, Context.MODE_PRIVATE).edit()
+                    .putBoolean(LOCK_PREF, false).apply();
+                updateStatus();
+                showNotice("Operator lock disabled.");
+            });
+        } else if (!OperatorLockPolicy.canEnable(deviceIsSecure())) {
+            showNotice("Set a PIN, password, or secure screen lock in Android Settings before enabling this option.");
+        } else {
+            getSharedPreferences(GatewayConfig.PREFS, Context.MODE_PRIVATE).edit()
+                .putBoolean(LOCK_PREF, true).apply();
+            updateStatus();
+            showNotice("Operator lock enabled. Sensitive actions now require device authentication.");
         }
     }
 
@@ -850,6 +929,9 @@ public class MainActivity extends Activity {
             suggestedActionButton.setVisibility(summary.action == OperatorStatus.Action.NONE
                 ? View.GONE : View.VISIBLE);
             suggestedActionButton.setText(summary.actionLabel);
+        }
+        if (operatorLockButton != null) {
+            operatorLockButton.setText(operatorLockEnabled() ? "Disable operator lock" : "Enable operator lock");
         }
         if (batteryStatusText != null) {
             batteryStatusText.setText(isBatteryExempt()
