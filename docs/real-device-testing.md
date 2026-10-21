@@ -182,3 +182,19 @@ checklist is not evidence that real-device tests have already passed.
    request takes place, and no relay secret/device ID is sent as URL parameters.
 4. Confirm the help text distinguishes signed release updates from older
    debug-signed APKs that may require one uninstall.
+
+## Gateway connection categories (unreleased)
+
+- After a successful poll with no jobs, verify **Connected — no pending SMS
+  jobs** rather than an error warning.
+- Use a controlled gateway to return 401/403, 429, 404 and 503 in separate
+  runs. Confirm operator labels correctly distinguish auth, rate limit, bad
+  request and server outage, without displaying raw gateway response content.
+- Disconnect network or introduce an unreachable host to verify the network
+  category; deliberately time out a test gateway and verify timeout category.
+- Use a test endpoint with a TLS certificate mismatch to confirm the TLS error
+  classification. Do not bypass HTTPS certificate verification.
+- Verify the displayed interval reflects the configured polling interval,
+  and does not suggest the app has an unimplemented adaptive backoff policy.
+- Copy diagnostics and confirm no exception text, raw URLs, OTPs or phone
+  numbers appear. Record real-device findings before claiming completion.
