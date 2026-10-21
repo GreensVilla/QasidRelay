@@ -29,6 +29,14 @@ callbacks, manual restart handling, and request-signing unit tests. A controlled
 
 ## Operator experience (unreleased)
 
+A safe gateway-health category now distinguishes **idle/no pending jobs**,
+**network unavailable**, **TLS failure**, **timeout**, **authentication denied**,
+**rate limit**, and **server error**. The operator UI explains a suggested next
+step. The display shows the configured polling interval; the relay does not
+claim to use exponential backoff or report an exact next-retry countdown.
+Raw exception messages are not shown or persisted by this health classification.
+
+
 The UI also shows the installed app version/build and provides an external link
 to the project's official GitHub Releases page. It does not download or install
 APKs automatically, call an update API, or transmit relay identifiers to GitHub
