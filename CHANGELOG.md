@@ -2,6 +2,19 @@
 
 ## Unreleased — operator UI/UX improvements
 
+### Additional operator activity improvements
+
+- Add a separate, persistent 20-event UI activity log with one-way message
+  fingerprints rather than raw message IDs, recipient numbers or contents.
+- Present pending gateway reports, status acceptance and recent send failures
+  in an expandable panel (five events by default).
+- Map common SMS callback failures to operator guidance and safe gateway details.
+- Add a confirmed `Clear local activity` action; preserve pending status
+  reports and duplicate-send safeguards.
+- Add pure Java retention/failure tests and device-level persistence/isolation tests.
+- Replace unknown Android result details with safe `SMS_RESULT_OTHER`.
+
+
 ### Added
 
 - Operator status summary: Needs setup, Needs SMS permission, Messaging paused,
