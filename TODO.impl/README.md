@@ -43,6 +43,13 @@ export paths.
 - Task 05, SMS error guidance: code and unit tests committed. Additional carrier
   error mappings and controlled device failure tests remain.
 
+## Safe setup recovery (unreleased)
+
+- Task 06: initial safe configuration guard, local setup check and confirmed
+  server reset implemented. Requires physical-device reset/rotation tests before
+  release. Changing keys with unsettled SMS or reports remains intentionally
+  blocked.
+
 ## Near-term
 
 - Implement or deploy a small HTTPS/HMAC reference gateway for non-GreensVilla
