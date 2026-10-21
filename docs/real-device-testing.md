@@ -209,3 +209,34 @@ checklist is not evidence that real-device tests have already passed.
    the browser URL. Back navigation should return to the operator app.
 4. Repeat with an active relay and a small screen; the Help action must not
    change SMS permissions, sending state or device configuration.
+
+## Final operator usability and safety checks (unreleased)
+
+1. On a test device with a configured PIN/password, enable **Operator lock**.
+   Confirm changing/saving configuration, enabling/disabling SMS, forgetting
+   server, clearing activity, and copying diagnostics all require device
+   credential approval. Cancel authentication and confirm no action executes.
+2. Disable the device screen lock in Android settings and confirm protected
+   actions fail closed rather than bypassing authentication. Re-enable the
+   device lock to recover. Confirm that relay polling already underway does
+   not depend on foreground authentication.
+3. Open **Guided device test**. Start the local checklist before an approved
+   gateway send. Confirm it cannot report success from an older SMS event and
+   requires a fresh poll, send attempt, Android sent callback, acknowledged
+   gateway status, and empty pending-report queue. Verify the text does not
+   claim delivery to the recipient.
+4. Confirm the foreground notification is actionable only by opening the
+   operator app and shows a generic status/queue count, never a message body,
+   OTP, number, gateway key, or raw error. Check Android 13+ notification
+   permission behavior and verify update cadence is not excessive.
+5. During a staged gateway test, return optional `destination_policy` values:
+   `allowlist_only`, `country_restricted/+92`, `self_managed`, missing,
+   and malformed. Verify correct labels, safe fallback, and no local policy
+   override.
+6. Kill the process after the worker is started and verify the app does not
+   request a sticky silent restart. Operator must explicitly return and
+   start the relay when required. Test reboot and package replacement as
+   documented earlier.
+7. Test on a real phone with a physical authorized SIM, including screen-off
+   polling, multiple SMS parts, failed carrier send and gateway reconnect.
+   Emulator tests **cannot** satisfy this step.
