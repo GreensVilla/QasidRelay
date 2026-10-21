@@ -29,6 +29,12 @@ callbacks, manual restart handling, and request-signing unit tests. A controlled
 
 ## Operator experience (unreleased)
 
+The UI also shows the installed app version/build and provides an external link
+to the project's official GitHub Releases page. It does not download or install
+APKs automatically, call an update API, or transmit relay identifiers to GitHub
+as part of a background check.
+
+
 The setup screen now offers a **local field check** (no network request),
 explicitly guards changing server URL/device identity or rotating the key
 while the relay is enabled or reports/SMS callbacks are outstanding, and
