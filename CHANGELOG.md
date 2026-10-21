@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased — operator UI/UX improvements
+
+### Added
+
+- Operator status summary: Needs setup, Needs SMS permission, Messaging paused,
+  Needs manual restart, Connecting, Connection problem, Polling delayed, Ready.
+- Contextual next-action button; no automatic SMS activation.
+- Redacted, copyable support diagnostics with per-copy correlation ID.
+- Battery optimization guidance and Android system-settings shortcut.
+- JVM tests for UI state mapping and diagnostic redaction.
+
+### Changed
+
+- Rounded panels/buttons and clearer polling timestamps.
+- Last-delivery UI hides raw message IDs and detailed error messages.
+
+### Remaining validation
+
+- Android CI, on-device layout and accessibility, clipboard paste testing,
+  battery-settings behavior, screenshots and vendor-specific background testing.
+- Gateway HTTP category and pending report age are not yet displayed.
+
+
+
 ## 0.1.7 - 2026-07-29
 
 ### Fixed
