@@ -34,7 +34,9 @@ public class RelayService extends Service {
             worker = new Thread(this::runLoop, "QasidRelayWorker");
             worker.start();
         }
-        return START_STICKY;
+        // Never ask Android to silently recreate the SMS relay after process death.
+        // A foreground operator action is required to resume.
+        return START_NOT_STICKY;
     }
 
     @Override
@@ -135,7 +137,7 @@ public class RelayService extends Service {
                         }
                     }
                 } catch (Exception error) {
-                    Log.w(TAG, "Polling failed", error);
+                    Log.w(TAG, "Polling failed: " + GatewayFailureGuide.classify(error));
                     RelayStatusStore.markPollFailed(this, error);
                 }
                 sleep(config.pollSeconds);
