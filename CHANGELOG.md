@@ -2,6 +2,19 @@
 
 ## Unreleased — operator UI/UX improvements
 
+### Additional configuration safety
+
+- Add `Check setup locally` with clear notice that it does not authenticate
+  or communicate with the remote gateway.
+- Block changing or forgetting server/key while messaging is enabled, an SMS
+  attempt is in flight, or gateway reports remain queued.
+- Add confirmed `Forget this server` flow, clearing encrypted credential
+  references and gateway-specific local history without silently restarting.
+- Stop the relay from beginning additional SMS submissions from an already
+  fetched batch once messaging is disabled.
+- Add JVM tests for credential-change guard decisions.
+
+
 ### Additional operator activity improvements
 
 - Add a separate, persistent 20-event UI activity log with one-way message
