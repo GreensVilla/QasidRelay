@@ -149,3 +149,25 @@ checklist is not evidence that real-device tests have already passed.
 - Execute `./gradlew :app:connectedDebugAndroidTest` on a physical test phone
   and record the results for `RecentActivityStoreInstrumentedTest`.
 - Do not claim recipient delivery from Android sent callbacks.
+
+## Configuration change and reset safety (unreleased)
+
+1. On a controlled staging device, save a new HTTPS origin, device name and key.
+   Tap **Check setup locally**. Verify its success message explicitly states
+   that the gateway and signing secret were **not** checked remotely.
+2. Start messaging and try to change the server URL or private key. Confirm it
+   is rejected with **Disable messaging before changing** guidance.
+3. Disable messaging; while a test SMS attempt or status report is still
+   outstanding, attempt key rotation or **Forget this server**. Confirm both
+   are blocked without losing the pending callback/report.
+4. After all reports are acknowledged and callbacks settle, save a new server
+   identity. Verify the new connection starts disabled, previous gateway UI
+   history and message ledger are cleared, and stale last-poll health is reset.
+5. On a separate test setup, tap **Forget this server**, cancel once, confirm
+   once, and verify the app has no URL, device ID, or saved secret. Confirm it
+   cannot resume SMS sending without explicit new setup and operator start.
+6. Disable messaging just after a gateway returns multiple pending messages.
+   Verify the device does not start new sends from that fetched batch once the
+   operator stop takes effect. Capture any observed race separately.
+7. Never run destructive reset tests using live OTPs, customer messages,
+   production gateway credentials or a real user account.
