@@ -1,6 +1,20 @@
 # QasidRelay handoff
 
-Updated: 2026-07-29
+Updated: 2026-07-29 (historical handoff; see addendum)
+
+## Operator UX addendum — 2026-10-21 (unreleased)
+
+Branch: `codex/operator-dashboard-diagnostics-ux`.
+
+The first implementation adds an operator status summary and contextual actions,
+safe support diagnostics copying, battery settings guidance, clearer timestamps,
+and JVM tests. It preserves all current Android permissions and the existing
+phone-initiated HTTPS/HMAC SMS protocol.
+
+This is **not a signed release**. Before release, inspect GitHub Actions and
+verify real-device operation, clipboard redaction, battery navigation and small
+screen layouts. The UI still lacks dedicated HTTP category and report queue age
+fields, and vendor-specific battery guidance requires tested evidence.
 
 ## Repository
 
