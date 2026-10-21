@@ -2,6 +2,7 @@ package org.greensvilla.qasidrelay;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -28,6 +29,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Date;
 
 public class MainActivity extends Activity {
@@ -60,6 +62,10 @@ public class MainActivity extends Activity {
     private TextView summaryDescriptionText;
     private Button suggestedActionButton;
     private TextView batteryStatusText;
+    private LinearLayout activityList;
+    private Button activityToggleButton;
+    private Button clearActivityButton;
+    private boolean showAllActivity;
     private TextView configStatusText;
     private TextView messagingStatusText;
     private TextView permissionStatusText;
@@ -196,6 +202,23 @@ public class MainActivity extends Activity {
         noticeText.setPadding(0, dp(12), 0, 0);
         controlPanel.addView(noticeText);
         layout.addView(controlPanel);
+
+        LinearLayout activityPanel = panel();
+        activityPanel.addView(sectionTitle("Recent activity"));
+        activityPanel.addView(helper("Only redacted local events are stored. This is not a carrier delivery receipt or an SMS inbox."));
+        activityList = new LinearLayout(this);
+        activityList.setOrientation(LinearLayout.VERTICAL);
+        activityPanel.addView(activityList);
+        activityToggleButton = secondaryButton("Show all activity");
+        activityToggleButton.setOnClickListener(view -> {
+            showAllActivity = !showAllActivity;
+            updateRecentActivity();
+        });
+        activityPanel.addView(activityToggleButton);
+        clearActivityButton = secondaryButton("Clear local activity");
+        clearActivityButton.setOnClickListener(view -> confirmClearActivity());
+        activityPanel.addView(clearActivityButton);
+        layout.addView(activityPanel);
 
         LinearLayout diagnosticsPanel = panel();
         diagnosticsPanel.addView(sectionTitle("Support & diagnostics"));
@@ -358,6 +381,81 @@ public class MainActivity extends Activity {
             } catch (RuntimeException fallbackError) {
                 showNotice("Battery settings could not be opened. Open Android Settings, then find QasidRelay under Apps.");
             }
+        }
+    }
+
+    private void confirmClearActivity() {
+        new AlertDialog.Builder(this)
+            .setTitle("Clear local activity?")
+            .setMessage("This clears only the on-phone activity display. It will not delete pending status reports or duplicate-send safeguards.")
+            .setNegativeButton("Cancel", (dialog, which) -> { })
+            .setPositiveButton("Clear history", (dialog, which) -> {
+                RecentActivityStore.clear(this);
+                updateRecentActivity();
+                Toast.makeText(this, "Local activity cleared", Toast.LENGTH_SHORT).show();
+            })
+            .show();
+    }
+
+    private void updateRecentActivity() {
+        if (activityList == null) {
+            return;
+        }
+        List<RecentActivityStore.Entry> events = RecentActivityStore.recent(this);
+        activityList.removeAllViews();
+        if (events.isEmpty()) {
+            TextView empty = helper("No messages handled by this phone yet.");
+            empty.setPadding(0, dp(10), 0, dp(10));
+            activityList.addView(empty);
+        } else {
+            int count = showAllActivity ? events.size() : Math.min(5, events.size());
+            for (int i = 0; i < count; i++) {
+                RecentActivityStore.Entry event = events.get(i);
+                TextView item = new TextView(this);
+                String label = activityLabel(event);
+                String description = "";
+                if ("failed".equals(event.state) && !event.cause.isEmpty()) {
+                    description = "\n" + SmsFailureGuide.forStoredCause(event.cause).suggestion;
+                }
+                item.setText(label + " • " + relativeTime(event.timestamp) +
+                    "\n" + event.reference + description);
+                item.setTextSize(13);
+                item.setTextColor("failed".equals(event.state) ? COLOR_DANGER : COLOR_TEXT);
+                item.setPadding(0, dp(12), 0, dp(12));
+                activityList.addView(item);
+                if (i < count - 1) {
+                    View separator = new View(this);
+                    separator.setBackgroundColor(COLOR_BORDER);
+                    activityList.addView(separator, new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, dp(1)));
+                }
+            }
+        }
+        if (activityToggleButton != null) {
+            activityToggleButton.setVisibility(events.size() > 5 ? View.VISIBLE : View.GONE);
+            activityToggleButton.setText(showAllActivity ? "Show fewer events" : "Show all " + events.size() + " events");
+        }
+        if (clearActivityButton != null) {
+            clearActivityButton.setVisibility(events.isEmpty() ? View.GONE : View.VISIBLE);
+        }
+    }
+
+    private String activityLabel(RecentActivityStore.Entry event) {
+        switch (event.state) {
+            case "sending":
+                return "Submitted to Android";
+            case "sent":
+                return "Android accepted SMS for sending";
+            case "failed":
+                return SmsFailureGuide.forStoredCause(event.cause).label;
+            case "report pending":
+                return "Gateway status report queued";
+            case "reported":
+                return "Gateway status confirmed";
+            case "skipped":
+                return "Duplicate or pending attempt skipped";
+            default:
+                return "Activity";
         }
     }
 
@@ -578,10 +676,11 @@ public class MainActivity extends Activity {
         }
         if (messageStatusText != null) {
             if (status.lastMessageId.isEmpty()) {
-                messageStatusText.setText("Last delivery: none");
+                messageStatusText.setText("Latest SMS attempt: none");
             } else {
-                messageStatusText.setText("Last delivery status: " +
-                    SafeDiagnostics.safeMessageStatus(status.lastMessageStatus) +
+                messageStatusText.setText("Latest SMS state: " +
+                    ("sent".equals(status.lastMessageStatus) ? "Android accepted for sending" :
+                        SafeDiagnostics.safeMessageStatus(status.lastMessageStatus)) +
                     " (" + relativeTime(status.lastMessageAt) + ")");
             }
         }
@@ -609,6 +708,7 @@ public class MainActivity extends Activity {
                 messagingHelpText.setText("Disabled: this phone will not fetch pending jobs or send SMS.");
             }
         }
+        updateRecentActivity();
         if (secretHelpText != null) {
             secretHelpText.setText(config.sharedSecret.isEmpty()
                 ? "Enter the private relay key from the server. It will be encrypted with Android Keystore."
