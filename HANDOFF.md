@@ -4,6 +4,22 @@ Updated: 2026-07-29 (historical handoff; see addendum)
 
 ## Operator UX addendum — 2026-10-21 (unreleased)
 
+Latest software-side development:
+
+- Corrected Android relay startup to use `START_NOT_STICKY` and changed
+  polling logging to a coarse, redacted failure category.
+- Foreground notification summarizes safe gateway state/pending report count.
+- Added passive guided device-test checklist based on a fresh local send,
+  gateway acknowledgement and empty report queue; no synthetic sending.
+- Added opt-in Android device-credential gate for sensitive operator actions,
+  with no app-managed PIN or extra permissions.
+- Added a backward-compatible gateway-reported destination-policy display.
+- Added new JVM tests and an emulator instrumentation CI job (real SIM still
+  required for full validation).
+- Detailed release and device test checklist items remain gating for a signed
+  prerelease; do not claim production readiness solely from CI.
+
+
 Third implementation pass:
 
 - Guard editing gateway identity and relay key during active messaging,
