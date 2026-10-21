@@ -3,6 +3,11 @@ name: CI
 on:
   pull_request:
   push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   static:
@@ -83,6 +88,7 @@ jobs:
           if-no-files-found: error
 
   instrumentation:
+    if: github.event_name == 'pull_request'
     # Emulator coverage supplements (and cannot replace) testing with a real SIM.
     runs-on: ubuntu-latest
     timeout-minutes: 25
