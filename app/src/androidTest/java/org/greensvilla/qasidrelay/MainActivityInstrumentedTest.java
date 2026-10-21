@@ -22,6 +22,8 @@ public class MainActivityInstrumentedTest {
         try {
             View root = activity.getWindow().getDecorView();
             assertTrue(findText(root, "RELAY OVERVIEW"));
+            assertTrue(findText(root, "Show status details"));
+            assertTrue(findText(root, "Messaging control"));
             assertTrue(findText(root, "Recent activity"));
             assertTrue(findText(root, "Support & diagnostics"));
             assertTrue(findText(root, "Guided device test"));
