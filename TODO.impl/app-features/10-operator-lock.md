@@ -1,8 +1,22 @@
 # 10 — Optional operator lock
 
-Status: `PLANNED`
+Status: `IN PROGRESS` (opt-in device-credential gate committed)
 
 Priority: `P2`
+
+## Implemented so far
+
+- Optional Android device-credential gate enabled only when a secure
+  system screen lock already exists.
+- Protects saving configuration, starting/stopping SMS relay, forgetting
+  server, clearing activity, copying diagnostics, and disabling the lock.
+- Cancelled/failed prompts discard the pending action.
+- App does not store a PIN/password; background relay work does not depend
+  on device unlock.
+- Unit tests cover lock-enabled/secure-device policy.
+
+Still pending: on-device credential intent testing, OEM compatibility,
+screen-reader checks and review of lifecycle edge cases.
 
 ## Goal
 

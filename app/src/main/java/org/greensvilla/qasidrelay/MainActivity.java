@@ -2,7 +2,20 @@ package org.greensvilla.qasidrelay;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.KeyguardManager;
 import android.content.Intent;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager.NameNotFoundException;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.net.Uri;
+import android.os.PowerManager;
+import android.provider.Settings;
+import android.view.View;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -17,6 +30,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Date;
 
 public class MainActivity extends Activity {
@@ -28,6 +42,8 @@ public class MainActivity extends Activity {
     private static final int COLOR_BORDER = 0xFFE2E8F0;
     private static final int COLOR_ACCENT = 0xFF2563EB;
     private static final int COLOR_DANGER = 0xFFB91C1C;
+    private static final int COLOR_SUCCESS = 0xFF166534;
+    private static final int COLOR_WARNING = 0xFF92400E;
 
     private final Handler refreshHandler = new Handler(Looper.getMainLooper());
     private final Runnable refreshRunnable = new Runnable() {
@@ -43,11 +59,30 @@ public class MainActivity extends Activity {
     private EditText secretInput;
     private TextView secretHelpText;
     private TextView noticeText;
+    private TextView summaryTitleText;
+    private TextView summaryDescriptionText;
+    private Button suggestedActionButton;
+    private TextView batteryStatusText;
+    private TextView installedVersionText;
+    private TextView testProgressText;
+    private Button testToggleButton;
+    private static final String TEST_PREF = "smoke_test_started_at";
+    private static final String LOCK_PREF = "operator_device_credential_lock";
+    private static final int UNLOCK_REQUEST = 1419;
+    private Runnable pendingUnlockAction;
+    private Button operatorLockButton;
+    private LinearLayout activityList;
+    private Button activityToggleButton;
+    private Button clearActivityButton;
+    private boolean showAllActivity;
     private TextView configStatusText;
+    private LinearLayout statusDetailsContainer;
     private TextView messagingStatusText;
     private TextView permissionStatusText;
     private TextView serviceStatusText;
     private TextView pollStatusText;
+    private TextView gatewayStatusText;
+    private TextView gatewayPolicyText;
     private TextView messageStatusText;
     private TextView queueStatusText;
     private Button messagingToggleButton;
@@ -58,6 +93,19 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         render();
         applySetupIntent(getIntent());
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != UNLOCK_REQUEST) return;
+        Runnable action = pendingUnlockAction;
+        pendingUnlockAction = null; // Fail closed if Android cancels authentication.
+        if (resultCode == Activity.RESULT_OK && action != null) {
+            action.run();
+        } else {
+            showNotice("Device authentication was cancelled. No changes made.");
+        }
     }
 
     @Override
@@ -115,14 +163,41 @@ public class MainActivity extends Activity {
         layout.addView(subtitle);
 
         LinearLayout statusPanel = panel();
-        statusPanel.addView(sectionTitle("Relay status"));
-        configStatusText = statusRow(statusPanel, "Configuration");
-        messagingStatusText = statusRow(statusPanel, "Messaging");
-        permissionStatusText = statusRow(statusPanel, "Permissions");
-        serviceStatusText = statusRow(statusPanel, "Service");
-        pollStatusText = statusRow(statusPanel, "Polling");
-        messageStatusText = statusRow(statusPanel, "Last delivery");
-        queueStatusText = statusRow(statusPanel, "Report queue");
+        statusPanel.addView(helper("RELAY OVERVIEW"));
+        summaryTitleText = new TextView(this);
+        summaryTitleText.setTextSize(24);
+        summaryTitleText.setTypeface(null, Typeface.BOLD);
+        summaryTitleText.setTextColor(COLOR_TEXT);
+        summaryTitleText.setPadding(0, dp(7), 0, dp(4));
+        statusPanel.addView(summaryTitleText);
+        summaryDescriptionText = helper("");
+        summaryDescriptionText.setTextSize(14);
+        summaryDescriptionText.setPadding(0, 0, 0, dp(8));
+        statusPanel.addView(summaryDescriptionText);
+        suggestedActionButton = secondaryButton("Review setup");
+        suggestedActionButton.setOnClickListener(view -> performSuggestedAction());
+        statusPanel.addView(suggestedActionButton);
+        Button detailsToggle = secondaryButton("Show status details");
+        statusPanel.addView(detailsToggle);
+        statusDetailsContainer = new LinearLayout(this);
+        statusDetailsContainer.setOrientation(LinearLayout.VERTICAL);
+        statusDetailsContainer.setVisibility(View.GONE);
+        detailsToggle.setOnClickListener(view -> {
+            boolean expanded = statusDetailsContainer.getVisibility() != View.VISIBLE;
+            statusDetailsContainer.setVisibility(expanded ? View.VISIBLE : View.GONE);
+            detailsToggle.setText(expanded ? "Hide status details" : "Show status details");
+        });
+        statusDetailsContainer.addView(sectionTitle("Details"));
+        configStatusText = statusRow(statusDetailsContainer, "Configuration");
+        messagingStatusText = statusRow(statusDetailsContainer, "Messaging");
+        permissionStatusText = statusRow(statusDetailsContainer, "Permissions");
+        serviceStatusText = statusRow(statusDetailsContainer, "Service");
+        pollStatusText = statusRow(statusDetailsContainer, "Polling");
+        gatewayStatusText = statusRow(statusDetailsContainer, "Gateway");
+        gatewayPolicyText = statusRow(statusDetailsContainer, "Destination policy");
+        messageStatusText = statusRow(statusDetailsContainer, "Last delivery");
+        queueStatusText = statusRow(statusDetailsContainer, "Report queue");
+        statusPanel.addView(statusDetailsContainer);
         layout.addView(statusPanel);
 
         LinearLayout configPanel = panel();
@@ -143,9 +218,17 @@ public class MainActivity extends Activity {
         configPanel.addView(secretHelpText);
 
         Button saveButton = primaryButton("Save configuration");
-        saveButton.setOnClickListener(view -> saveConfig(true));
+        saveButton.setOnClickListener(view -> runProtectedAction(() -> saveConfig(true)));
         configPanel.addView(saveButton);
-        layout.addView(configPanel);
+
+        Button checkSetupButton = secondaryButton("Check setup locally");
+        checkSetupButton.setOnClickListener(view -> checkSetupLocally());
+        configPanel.addView(checkSetupButton);
+
+        Button forgetServerButton = secondaryButton("Forget this server");
+        forgetServerButton.setTextColor(COLOR_DANGER);
+        forgetServerButton.setOnClickListener(view -> runProtectedAction(this::confirmForgetServer));
+        configPanel.addView(forgetServerButton);
 
         LinearLayout controlPanel = panel();
         controlPanel.addView(sectionTitle("Messaging control"));
@@ -154,7 +237,7 @@ public class MainActivity extends Activity {
         controlPanel.addView(permissionButton);
 
         messagingToggleButton = primaryButton("Enable messaging");
-        messagingToggleButton.setOnClickListener(view -> toggleMessaging());
+        messagingToggleButton.setOnClickListener(view -> runProtectedAction(this::toggleMessaging));
         controlPanel.addView(messagingToggleButton);
 
         messagingHelpText = helper("");
@@ -165,6 +248,75 @@ public class MainActivity extends Activity {
         noticeText.setPadding(0, dp(12), 0, 0);
         controlPanel.addView(noticeText);
         layout.addView(controlPanel);
+        layout.addView(configPanel);
+
+        LinearLayout activityPanel = panel();
+        activityPanel.addView(sectionTitle("Recent activity"));
+        activityPanel.addView(helper("Only redacted local events are stored. This is not a carrier delivery receipt or an SMS inbox."));
+        activityList = new LinearLayout(this);
+        activityList.setOrientation(LinearLayout.VERTICAL);
+        activityPanel.addView(activityList);
+        activityToggleButton = secondaryButton("Show all activity");
+        activityToggleButton.setOnClickListener(view -> {
+            showAllActivity = !showAllActivity;
+            updateRecentActivity();
+        });
+        activityPanel.addView(activityToggleButton);
+        clearActivityButton = secondaryButton("Clear local activity");
+        clearActivityButton.setOnClickListener(view -> runProtectedAction(this::confirmClearActivity));
+        activityPanel.addView(clearActivityButton);
+        layout.addView(activityPanel);
+
+        LinearLayout diagnosticsPanel = panel();
+        diagnosticsPanel.addView(sectionTitle("Support & diagnostics"));
+        diagnosticsPanel.addView(helper("Copy a redacted status summary without relay keys, message contents, or recipient numbers."));
+        Button copyDiagnosticsButton = secondaryButton("Copy diagnostics");
+        copyDiagnosticsButton.setOnClickListener(view -> runProtectedAction(this::copyDiagnostics));
+        diagnosticsPanel.addView(copyDiagnosticsButton);
+        diagnosticsPanel.addView(helper("Only share diagnostics with trusted support. Review before sending."));
+        layout.addView(diagnosticsPanel);
+
+        LinearLayout accessPanel = panel();
+        accessPanel.addView(sectionTitle("Operator lock"));
+        accessPanel.addView(helper("Optionally require the phone's own screen-lock authentication before starting/stopping SMS, changing setup, copying diagnostics or clearing history. Relay polling continues without unlocking."));
+        operatorLockButton = secondaryButton("Enable operator lock");
+        operatorLockButton.setOnClickListener(view -> changeOperatorLock());
+        accessPanel.addView(operatorLockButton);
+        layout.addView(accessPanel);
+
+        LinearLayout batteryPanel = panel();
+        batteryPanel.addView(sectionTitle("Battery & background reliability"));
+        batteryStatusText = helper("");
+        batteryPanel.addView(batteryStatusText);
+        Button batterySettingsButton = secondaryButton("Open battery settings");
+        batterySettingsButton.setOnClickListener(view -> openBatterySettings());
+        batteryPanel.addView(batterySettingsButton);
+        layout.addView(batteryPanel);
+
+        LinearLayout testPanel = panel();
+        testPanel.addView(sectionTitle("Guided device test"));
+        testPanel.addView(helper("Only for a controlled recipient you own or are authorized to test. No test SMS is generated here."));
+        testProgressText = helper("");
+        testProgressText.setPadding(0, dp(8), 0, dp(8));
+        testPanel.addView(testProgressText);
+        testToggleButton = secondaryButton("Start local test checklist");
+        testToggleButton.setOnClickListener(view -> toggleTestChecklist());
+        testPanel.addView(testToggleButton);
+        layout.addView(testPanel);
+
+        LinearLayout versionPanel = panel();
+        versionPanel.addView(sectionTitle("App version"));
+        installedVersionText = helper(installedVersion());
+        installedVersionText.setPadding(0, dp(4), 0, dp(6));
+        versionPanel.addView(installedVersionText);
+        Button releaseButton = secondaryButton("Open official releases");
+        releaseButton.setOnClickListener(view -> openOfficialReleases());
+        versionPanel.addView(releaseButton);
+        Button helpButton = secondaryButton("Help & documentation");
+        helpButton.setOnClickListener(view -> showDocumentationLinks());
+        versionPanel.addView(helpButton);
+        versionPanel.addView(helper("Updates are installed manually. Signed builds normally update in place; older debug builds may need one uninstall."));
+        layout.addView(versionPanel);
 
         TextView policy = helper("Transactional SMS only: OTP, password recovery, operational alerts, and private pilot notifications. The app does not request READ_SMS and does not expose an inbound phone API.");
         policy.setPadding(0, 0, 0, dp(12));
@@ -177,7 +329,11 @@ public class MainActivity extends Activity {
     private LinearLayout panel() {
         LinearLayout panel = new LinearLayout(this);
         panel.setOrientation(LinearLayout.VERTICAL);
-        panel.setBackgroundColor(COLOR_PANEL);
+        GradientDrawable background = new GradientDrawable();
+        background.setColor(COLOR_PANEL);
+        background.setCornerRadius(dp(14));
+        background.setStroke(dp(1), COLOR_BORDER);
+        panel.setBackground(background);
         panel.setPadding(dp(16), dp(14), dp(16), dp(14));
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -195,6 +351,7 @@ public class MainActivity extends Activity {
         TextView section = new TextView(this);
         section.setText(text);
         section.setTextSize(16);
+        section.setTypeface(null, Typeface.BOLD);
         section.setTextColor(COLOR_TEXT);
         section.setPadding(0, 0, 0, dp(8));
         return section;
@@ -240,7 +397,9 @@ public class MainActivity extends Activity {
         Button button = new Button(this);
         button.setText(text);
         button.setTextColor(0xFFFFFFFF);
-        button.setBackgroundColor(COLOR_ACCENT);
+        button.setBackground(roundedBackground(COLOR_ACCENT));
+        button.setAllCaps(false);
+        button.setMinHeight(dp(46));
         return button;
     }
 
@@ -248,21 +407,382 @@ public class MainActivity extends Activity {
         Button button = new Button(this);
         button.setText(text);
         button.setTextColor(COLOR_TEXT);
-        button.setBackgroundColor(COLOR_BORDER);
+        button.setBackground(roundedBackground(COLOR_BORDER));
+        button.setAllCaps(false);
+        button.setMinHeight(dp(46));
         return button;
+    }
+
+    private GradientDrawable roundedBackground(int color) {
+        GradientDrawable background = new GradientDrawable();
+        background.setColor(color);
+        background.setCornerRadius(dp(10));
+        return background;
+    }
+
+    private void performSuggestedAction() {
+        GatewayConfig config = GatewayConfig.load(this);
+        RelayStatusStore.Snapshot status = RelayStatusStore.load(this);
+        OperatorStatus.Presentation state = OperatorStatus.resolve(
+            config.isReady(), hasSmsPermission(), config.messagingEnabled,
+            status.serviceRunning, status.state, status.lastSuccessAt,
+            System.currentTimeMillis(), config.pollSeconds
+        );
+        switch (state.action) {
+            case CONFIGURE:
+                baseUrlInput.requestFocus();
+                showNotice("Check your server URL, phone name, and private relay key below.");
+                break;
+            case PERMISSION:
+                requestRequiredPermissions();
+                break;
+            case ENABLE:
+            case START:
+                runProtectedAction(this::toggleMessaging);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private boolean operatorLockEnabled() {
+        return getSharedPreferences(GatewayConfig.PREFS, Context.MODE_PRIVATE)
+            .getBoolean(LOCK_PREF, false);
+    }
+
+    private boolean deviceIsSecure() {
+        KeyguardManager manager = (KeyguardManager) getSystemService(KEYGUARD_SERVICE);
+        return manager != null && manager.isDeviceSecure();
+    }
+
+    private void runProtectedAction(Runnable action) {
+        if (!OperatorLockPolicy.needsCredential(operatorLockEnabled())) {
+            action.run();
+            return;
+        }
+        if (!deviceIsSecure()) {
+            showNotice("Operator lock requires a secure Android screen lock. Set one in Android Settings.");
+            return;
+        }
+        KeyguardManager manager = (KeyguardManager) getSystemService(KEYGUARD_SERVICE);
+        Intent unlock = manager.createConfirmDeviceCredentialIntent(
+            "QasidRelay operator lock", "Confirm device unlock before changing relay settings");
+        if (unlock == null || pendingUnlockAction != null) {
+            showNotice("Unable to confirm device identity. No change was made.");
+            return;
+        }
+        pendingUnlockAction = action;
+        try {
+            startActivityForResult(unlock, UNLOCK_REQUEST);
+        } catch (RuntimeException error) {
+            pendingUnlockAction = null;
+            showNotice("Device authentication unavailable. No change was made.");
+        }
+    }
+
+    private void changeOperatorLock() {
+        if (operatorLockEnabled()) {
+            runProtectedAction(() -> {
+                getSharedPreferences(GatewayConfig.PREFS, Context.MODE_PRIVATE).edit()
+                    .putBoolean(LOCK_PREF, false).apply();
+                updateStatus();
+                showNotice("Operator lock disabled.");
+            });
+        } else if (!OperatorLockPolicy.canEnable(deviceIsSecure())) {
+            showNotice("Set a PIN, password, or secure screen lock in Android Settings before enabling this option.");
+        } else {
+            getSharedPreferences(GatewayConfig.PREFS, Context.MODE_PRIVATE).edit()
+                .putBoolean(LOCK_PREF, true).apply();
+            updateStatus();
+            showNotice("Operator lock enabled. Sensitive actions now require device authentication.");
+        }
+    }
+
+    private boolean isBatteryExempt() {
+        PowerManager manager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        return manager != null && manager.isIgnoringBatteryOptimizations(getPackageName());
+    }
+
+    private void openBatterySettings() {
+        try {
+            startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
+        } catch (RuntimeException error) {
+            try {
+                Intent details = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                details.setData(Uri.parse("package:" + getPackageName()));
+                startActivity(details);
+            } catch (RuntimeException fallbackError) {
+                showNotice("Battery settings could not be opened. Open Android Settings, then find QasidRelay under Apps.");
+            }
+        }
+    }
+
+    private long smokeStartedAt() {
+        return getSharedPreferences(GatewayConfig.PREFS, Context.MODE_PRIVATE).getLong(TEST_PREF, 0L);
+    }
+
+    private void toggleTestChecklist() {
+        if (smokeStartedAt() > 0L) {
+            new AlertDialog.Builder(this)
+                .setTitle("End device test?")
+                .setMessage("This resets the local checklist only. It will not affect SMS sending or pending reports.")
+                .setNegativeButton("Cancel", (dialog, which) -> { })
+                .setPositiveButton("End test", (dialog, which) -> {
+                    getSharedPreferences(GatewayConfig.PREFS, Context.MODE_PRIVATE)
+                        .edit().remove(TEST_PREF).apply();
+                    updateTestChecklist();
+                }).show();
+        } else {
+            getSharedPreferences(GatewayConfig.PREFS, Context.MODE_PRIVATE).edit()
+                .putLong(TEST_PREF, System.currentTimeMillis()).apply();
+            updateTestChecklist();
+        }
+    }
+
+    private void updateTestChecklist() {
+        if (testProgressText == null) return;
+        long started = smokeStartedAt();
+        if (started <= 0L) {
+            testProgressText.setText(SmokeTestProgress.summary(false, false));
+            testToggleButton.setText("Start local test checklist");
+            return;
+        }
+        GatewayConfig config = GatewayConfig.load(this);
+        RelayStatusStore.Snapshot status = RelayStatusStore.load(this);
+        boolean configured = config.isReady();
+        boolean permitted = hasSmsPermission();
+        boolean service = config.messagingEnabled && status.serviceRunning;
+        boolean checked = status.lastSuccessAt >= started;
+        String expectedRef = RecentActivityPolicy.fingerprint(status.lastMessageId);
+        boolean sentAfterStart = false;
+        boolean reportedAfterStart = false;
+        for (RecentActivityStore.Entry entry : RecentActivityStore.recent(this)) {
+            if (entry.timestamp < started || !expectedRef.equals(entry.reference)) continue;
+            if ("sending".equals(entry.state)) sentAfterStart = true;
+            if ("reported".equals(entry.state)) reportedAfterStart = true;
+        }
+        boolean sent = "sent".equals(status.lastMessageStatus);
+        boolean ack = "Gateway status report accepted.".equals(status.lastMessageDetail)
+            && status.lastMessageAt >= started;
+        boolean passed = SmokeTestProgress.canPass(configured, permitted, service,
+            checked, sentAfterStart, reportedAfterStart, sent, ack, status.pendingReportCount);
+        String summary = SmokeTestProgress.summary(true, passed);
+        testProgressText.setText(summary +
+            "\n" + step(configured, "1. Trusted server configured") +
+            "\n" + step(permitted, "2. SMS permission granted") +
+            "\n" + step(service, "3. Relay foreground service running") +
+            "\n" + step(checked, "4. HTTPS/HMAC gateway poll succeeded since test start") +
+            "\n" + step(sentAfterStart, "5. Controlled test SMS submitted to Android") +
+            "\n" + step(sent && reportedAfterStart && ack,
+                "6. Android send accepted, status acknowledged by gateway") +
+            "\n" + step(status.pendingReportCount == 0, "7. Pending report queue empty") +
+            "\nUse the trusted gateway to queue exactly one authorized test message; do not use customer OTPs.");
+        testToggleButton.setText("End local test checklist");
+    }
+
+    private String step(boolean okay, String name) {
+        return (okay ? "✓ " : "○ ") + name;
+    }
+
+    private void confirmClearActivity() {
+        new AlertDialog.Builder(this)
+            .setTitle("Clear local activity?")
+            .setMessage("This clears only the on-phone activity display. It will not delete pending status reports or duplicate-send safeguards.")
+            .setNegativeButton("Cancel", (dialog, which) -> { })
+            .setPositiveButton("Clear history", (dialog, which) -> {
+                RecentActivityStore.clear(this);
+                updateRecentActivity();
+                Toast.makeText(this, "Local activity cleared", Toast.LENGTH_SHORT).show();
+            })
+            .show();
+    }
+
+    private void updateRecentActivity() {
+        if (activityList == null) {
+            return;
+        }
+        List<RecentActivityStore.Entry> events = RecentActivityStore.recent(this);
+        activityList.removeAllViews();
+        if (events.isEmpty()) {
+            TextView empty = helper("No messages handled by this phone yet.");
+            empty.setPadding(0, dp(10), 0, dp(10));
+            activityList.addView(empty);
+        } else {
+            int count = showAllActivity ? events.size() : Math.min(5, events.size());
+            for (int i = 0; i < count; i++) {
+                RecentActivityStore.Entry event = events.get(i);
+                TextView item = new TextView(this);
+                String label = activityLabel(event);
+                String description = "";
+                if ("failed".equals(event.state) && !event.cause.isEmpty()) {
+                    description = "\n" + SmsFailureGuide.forStoredCause(event.cause).suggestion;
+                }
+                item.setText(label + " • " + relativeTime(event.timestamp) +
+                    "\n" + event.reference + description);
+                item.setTextSize(13);
+                item.setTextColor("failed".equals(event.state) ? COLOR_DANGER : COLOR_TEXT);
+                item.setPadding(0, dp(12), 0, dp(12));
+                activityList.addView(item);
+                if (i < count - 1) {
+                    View separator = new View(this);
+                    separator.setBackgroundColor(COLOR_BORDER);
+                    activityList.addView(separator, new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, dp(1)));
+                }
+            }
+        }
+        if (activityToggleButton != null) {
+            activityToggleButton.setVisibility(events.size() > 5 ? View.VISIBLE : View.GONE);
+            activityToggleButton.setText(showAllActivity ? "Show fewer events" : "Show all " + events.size() + " events");
+        }
+        if (clearActivityButton != null) {
+            clearActivityButton.setVisibility(events.isEmpty() ? View.GONE : View.VISIBLE);
+        }
+    }
+
+    private String activityLabel(RecentActivityStore.Entry event) {
+        switch (event.state) {
+            case "sending":
+                return "Submitted to Android";
+            case "sent":
+                return "Android accepted SMS for sending";
+            case "failed":
+                return SmsFailureGuide.forStoredCause(event.cause).label;
+            case "report pending":
+                return "Gateway status report queued";
+            case "reported":
+                return "Gateway status confirmed";
+            case "skipped":
+                return "Duplicate or pending attempt skipped";
+            default:
+                return "Activity";
+        }
+    }
+
+    private String installedVersion() {
+        try {
+            PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), 0);
+            return VersionPresentation.installed(info.versionName, info.versionCode);
+        } catch (NameNotFoundException error) {
+            return VersionPresentation.installed(null, 0);
+        }
+    }
+
+    private void openOfficialReleases() {
+        openOfficialLink(VersionPresentation.RELEASE_URL);
+    }
+
+    private void showDocumentationLinks() {
+        new AlertDialog.Builder(this)
+            .setTitle("Help & documentation")
+            .setItems(SupportLinks.LABELS, (dialog, selected) ->
+                openOfficialLink(SupportLinks.url(selected)))
+            .setNegativeButton("Close", (dialog, selected) -> { })
+            .show();
+    }
+
+    private void openOfficialLink(String url) {
+        if (url == null || !url.startsWith("https://github.com/GreensVilla/QasidRelay/")) {
+            showNotice("Unrecognized documentation link.");
+            return;
+        }
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        } catch (RuntimeException error) {
+            showNotice("Cannot open a browser. View project docs on the official GreensVilla/QasidRelay GitHub page.");
+        }
+    }
+
+    private void copyDiagnostics() {
+        GatewayConfig config = GatewayConfig.load(this);
+        RelayStatusStore.Snapshot status = RelayStatusStore.load(this);
+        String versionName = "unknown";
+        int versionCode = 0;
+        try {
+            PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), 0);
+            versionName = info.versionName;
+            versionCode = info.versionCode;
+        } catch (NameNotFoundException ignored) {
+            // Diagnostics are still useful without package metadata.
+        }
+        String report = SafeDiagnostics.create(
+            java.util.UUID.randomUUID().toString(), versionName, versionCode,
+            Build.MANUFACTURER, Build.MODEL, Build.VERSION.SDK_INT,
+            SafeDiagnostics.safeServerHost(config.baseUrl),
+            config.messagingEnabled, status.serviceRunning, hasSmsPermission(),
+            hasNotificationPermission(), isBatteryExempt(), status.state,
+            status.lastPollAt, status.lastSuccessAt, status.lastMessageStatus,
+            status.pendingReportCount
+        );
+        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        if (clipboard == null) {
+            showNotice("Clipboard unavailable. Diagnostics were not copied.");
+            return;
+        }
+        clipboard.setPrimaryClip(ClipData.newPlainText("QasidRelay diagnostics", report));
+        Toast.makeText(this, "Redacted diagnostics copied. Review before sharing.", Toast.LENGTH_LONG).show();
+    }
+
+    private GatewayConfig proposedConfig() {
+        GatewayConfig current = GatewayConfig.load(this);
+        String newKey = secretInput.getText().toString().trim();
+        return new GatewayConfig(baseUrlInput.getText().toString(),
+            deviceIdInput.getText().toString(),
+            newKey.isEmpty() ? current.sharedSecret : newKey,
+            current.pollSeconds, current.messagingEnabled);
+    }
+
+    private void checkSetupLocally() {
+        String problem = proposedConfig().validationError();
+        showNotice(problem == null
+            ? "Setup fields are valid locally. This does not check gateway access, credentials, or connectivity."
+            : problem);
+    }
+
+    private String configurationChangeBlock(boolean changed, GatewayConfig existing) {
+        return ConfigurationChangeGuard.blockReason(
+            changed, existing.messagingEnabled, StatusReportQueue.count(this),
+            SmsAttemptStore.hasAnyPending(this)
+        );
+    }
+
+    private void confirmForgetServer() {
+        GatewayConfig current = GatewayConfig.load(this);
+        String block = configurationChangeBlock(true, current);
+        if (block != null) {
+            showNotice(block);
+            return;
+        }
+        new AlertDialog.Builder(this)
+            .setTitle("Forget this server?")
+            .setMessage("The saved HTTPS server, phone name and encrypted relay key will be cleared. Messaging will remain disabled. This action cannot recover the key; obtain a new one from your trusted gateway.")
+            .setNegativeButton("Cancel", (dialog, which) -> { })
+            .setPositiveButton("Forget server", (dialog, which) -> {
+                GatewayConfig latest = GatewayConfig.load(this);
+                String currentBlock = configurationChangeBlock(true, latest);
+                if (currentBlock != null) {
+                    showNotice(currentBlock);
+                    return;
+                }
+                stopService(new Intent(this, RelayService.class));
+                GatewayConfig.forget(this);
+                RelayMessageLedger.clear(this);
+                RecentActivityStore.clear(this);
+                getSharedPreferences(GatewayConfig.PREFS, Context.MODE_PRIVATE)
+                    .edit().remove(TEST_PREF).apply();
+                RelayStatusStore.resetForNewGateway(this);
+                baseUrlInput.setText("");
+                deviceIdInput.setText("");
+                secretInput.setText("");
+                showNotice("Server forgotten. Enter new setup details before enabling messaging.");
+                updateStatus();
+            })
+            .show();
     }
 
     private boolean saveConfig(boolean showToast) {
         GatewayConfig existing = GatewayConfig.load(this);
-        String providedSecret = secretInput.getText().toString().trim();
-        String secret = providedSecret.isEmpty() ? existing.sharedSecret : providedSecret;
-        GatewayConfig config = new GatewayConfig(
-            baseUrlInput.getText().toString(),
-            deviceIdInput.getText().toString(),
-            secret,
-            existing.pollSeconds,
-            existing.messagingEnabled
-        );
+        GatewayConfig config = proposedConfig();
 
         String validationError = config.validationError();
         if (validationError != null) {
@@ -272,10 +792,25 @@ public class MainActivity extends Activity {
             return false;
         }
 
+        boolean changed = ConfigurationChangeGuard.credentialsChanged(existing, config);
+        String block = configurationChangeBlock(changed, existing);
+        if (block != null) {
+            showNotice(block);
+            return false;
+        }
+
         try {
             config.save(this);
+            if (ConfigurationChangeGuard.gatewayChanged(existing, config)) {
+                // Only when settled and disabled: old IDs/status belong to a different gateway.
+                RelayMessageLedger.clear(this);
+                RecentActivityStore.clear(this);
+                getSharedPreferences(GatewayConfig.PREFS, Context.MODE_PRIVATE)
+                    .edit().remove(TEST_PREF).apply();
+                RelayStatusStore.resetForNewGateway(this);
+            }
             secretInput.setText("");
-            showNotice("Configuration saved.");
+            showNotice("Configuration saved. Messaging stays disabled until you start the relay.");
             if (showToast) {
                 Toast.makeText(this, "Configuration saved", Toast.LENGTH_SHORT).show();
             }
@@ -393,6 +928,34 @@ public class MainActivity extends Activity {
         RelayStatusStore.Snapshot status = RelayStatusStore.load(this);
         String validationError = config.validationError();
         boolean serviceNeedsStart = config.messagingEnabled && !status.serviceRunning;
+        OperatorStatus.Presentation summary = OperatorStatus.resolve(
+            validationError == null, hasSmsPermission(), config.messagingEnabled,
+            status.serviceRunning, status.state, status.lastSuccessAt,
+            System.currentTimeMillis(), config.pollSeconds
+        );
+        if (summaryTitleText != null) {
+            summaryTitleText.setText(summary.title);
+            summaryTitleText.setTextColor(summary.level == OperatorStatus.Level.READY
+                ? COLOR_SUCCESS : (summary.level == OperatorStatus.Level.BLOCKED
+                ? COLOR_DANGER : (summary.level == OperatorStatus.Level.WARNING
+                ? COLOR_WARNING : COLOR_TEXT)));
+        }
+        if (summaryDescriptionText != null) {
+            summaryDescriptionText.setText(summary.description);
+        }
+        if (suggestedActionButton != null) {
+            suggestedActionButton.setVisibility(summary.action == OperatorStatus.Action.NONE
+                ? View.GONE : View.VISIBLE);
+            suggestedActionButton.setText(summary.actionLabel);
+        }
+        if (operatorLockButton != null) {
+            operatorLockButton.setText(operatorLockEnabled() ? "Disable operator lock" : "Enable operator lock");
+        }
+        if (batteryStatusText != null) {
+            batteryStatusText.setText(isBatteryExempt()
+                ? "Battery optimization exemption detected. Confirm polling still works with the screen off."
+                : "Battery settings may interrupt polling on some phones. Verify that the last successful poll keeps updating while the relay is active.");
+        }
         if (configStatusText != null) {
             configStatusText.setText("Configuration: " + (validationError == null ? "Ready" : validationError));
         }
@@ -406,19 +969,32 @@ public class MainActivity extends Activity {
                 ", notifications " + granted(hasNotificationPermission()));
         }
         if (serviceStatusText != null) {
-            serviceStatusText.setText("Service: " + status.state + "\n" + status.detail);
+            serviceStatusText.setText("Service: " + SafeDiagnostics.safeState(status.state));
         }
         if (pollStatusText != null) {
-            pollStatusText.setText("Polling: last poll " + formatTime(status.lastPollAt) +
-                ", last success " + formatTime(status.lastSuccessAt));
+            pollStatusText.setText("Last check: " + relativeTime(status.lastPollAt) +
+                "\nLast successful check: " + relativeTime(status.lastSuccessAt));
+        }
+        if (gatewayStatusText != null) {
+            gatewayStatusText.setText("Gateway: " +
+                GatewayFailureGuide.title(status.gatewayCategory) +
+                "\n" + GatewayFailureGuide.action(status.gatewayCategory) +
+                (config.messagingEnabled
+                    ? "\nConfigured check interval: " + config.pollSeconds + " seconds."
+                    : ""));
+        }
+        if (gatewayPolicyText != null) {
+            gatewayPolicyText.setText("Gateway-reported policy: " + status.gatewayPolicy +
+                "\nThis is informational; the server must enforce its own destination restrictions.");
         }
         if (messageStatusText != null) {
             if (status.lastMessageId.isEmpty()) {
-                messageStatusText.setText("Last delivery: none");
+                messageStatusText.setText("Latest SMS attempt: none");
             } else {
-                messageStatusText.setText("Last delivery: " + status.lastMessageId + " -> " +
-                    status.lastMessageStatus + "\n" + status.lastMessageDetail +
-                    "\n" + formatTime(status.lastMessageAt));
+                messageStatusText.setText("Latest SMS state: " +
+                    ("sent".equals(status.lastMessageStatus) ? "Android accepted for sending" :
+                        SafeDiagnostics.safeMessageStatus(status.lastMessageStatus)) +
+                    " (" + relativeTime(status.lastMessageAt) + ")");
             }
         }
         if (queueStatusText != null) {
@@ -427,13 +1003,13 @@ public class MainActivity extends Activity {
         if (messagingToggleButton != null) {
             if (config.messagingEnabled && status.serviceRunning) {
                 messagingToggleButton.setText("Disable messaging");
-                messagingToggleButton.setBackgroundColor(COLOR_DANGER);
+                messagingToggleButton.setBackground(roundedBackground(COLOR_DANGER));
             } else if (config.messagingEnabled) {
                 messagingToggleButton.setText("Start relay service");
-                messagingToggleButton.setBackgroundColor(COLOR_ACCENT);
+                messagingToggleButton.setBackground(roundedBackground(COLOR_ACCENT));
             } else {
                 messagingToggleButton.setText("Enable messaging");
-                messagingToggleButton.setBackgroundColor(COLOR_ACCENT);
+                messagingToggleButton.setBackground(roundedBackground(COLOR_ACCENT));
             }
         }
         if (messagingHelpText != null) {
@@ -445,6 +1021,8 @@ public class MainActivity extends Activity {
                 messagingHelpText.setText("Disabled: this phone will not fetch pending jobs or send SMS.");
             }
         }
+        updateRecentActivity();
+        updateTestChecklist();
         if (secretHelpText != null) {
             secretHelpText.setText(config.sharedSecret.isEmpty()
                 ? "Enter the private relay key from the server. It will be encrypted with Android Keystore."
@@ -461,6 +1039,24 @@ public class MainActivity extends Activity {
             return "never";
         }
         return DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM).format(new Date(timestampMillis));
+    }
+
+    private String relativeTime(long timestampMillis) {
+        if (timestampMillis <= 0L) {
+            return "never";
+        }
+        long elapsed = Math.max(0L, System.currentTimeMillis() - timestampMillis);
+        String relative;
+        if (elapsed < 60_000L) {
+            relative = "just now";
+        } else if (elapsed < 3_600_000L) {
+            relative = (elapsed / 60_000L) + " min ago";
+        } else if (elapsed < 86_400_000L) {
+            relative = (elapsed / 3_600_000L) + " hr ago";
+        } else {
+            relative = (elapsed / 86_400_000L) + " days ago";
+        }
+        return relative + " (" + formatTime(timestampMillis) + ")";
     }
 
     private String safeDetail(RuntimeException error) {

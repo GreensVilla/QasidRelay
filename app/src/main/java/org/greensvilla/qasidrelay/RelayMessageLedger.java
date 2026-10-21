@@ -13,6 +13,11 @@ final class RelayMessageLedger {
     private RelayMessageLedger() {
     }
 
+    static synchronized void clear(Context context) {
+        context.getSharedPreferences(GatewayConfig.PREFS, Context.MODE_PRIVATE)
+            .edit().remove(KEY_RECENT_MESSAGE_IDS).apply();
+    }
+
     static synchronized boolean hasSeen(Context context, String messageId) {
         if (!PendingMessage.hasValidId(messageId)) {
             return true;

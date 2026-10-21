@@ -1,8 +1,21 @@
 # 12 — Connectivity and backoff visibility
 
-Status: `PLANNED`
+Status: `IN PROGRESS` (coarse network state and operator guidance implemented)
 
 Priority: `P2`
+
+## Implemented so far
+
+- Pure-Java classifier recognizes HTTP 401/403, 429, 4xx and 5xx, network
+  connectivity errors, timeouts and TLS failures.
+- Idle/no pending jobs and jobs received are distinct from failures.
+- UI presents the coarse gateway state, suggested action, and actual
+  configured poll interval (not an inferred exponential backoff).
+- JVM tests cover network/HTTP distinction and exclusion of sensitive
+  exception text; status persistence now saves safe categories.
+
+Still pending: real-device network/TLS/auth failure tests, gateway-specific
+kill switch state, and any deliberate bounded adaptive backoff policy.
 
 ## Goal
 

@@ -1,8 +1,18 @@
 # 01 — Better operator status dashboard
 
-Status: `PLANNED`
+Status: `IN PROGRESS` (initial UI pass committed)
 
 Priority: `P0`
+
+## Implemented so far
+
+- Summary states with contextual next actions and manual restart guidance.
+- Relative/local gateway polling timestamps.
+- Conservative color plus text status and no message IDs in delivery summary.
+- JVM unit tests for state classification.
+
+Outstanding: dedicated HTTP/auth status category, queued-report age,
+gateway policy visibility, screenshot evidence and real-device accessibility QA.
 
 ## Goal
 

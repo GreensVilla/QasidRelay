@@ -34,7 +34,9 @@ public class RelayService extends Service {
             worker = new Thread(this::runLoop, "QasidRelayWorker");
             worker.start();
         }
-        return START_STICKY;
+        // Never ask Android to silently recreate the SMS relay after process death.
+        // A foreground operator action is required to resume.
+        return START_NOT_STICKY;
     }
 
     @Override
@@ -56,6 +58,7 @@ public class RelayService extends Service {
         RelayStatusStore.markServiceRunning(this, true);
         try {
             while (running) {
+                refreshNotification();
                 GatewayConfig config = GatewayConfig.load(this);
                 if (!config.messagingEnabled) {
                     RelayStatusStore.markWaiting(this, "Messaging is disabled by the operator; pending jobs will not be fetched.");
@@ -84,9 +87,15 @@ public class RelayService extends Service {
                     RelayStatusStore.markPolling(this);
                     List<PendingMessage> messages = client.fetchPending();
                     RelayStatusStore.markPollSucceeded(this, messages.size());
+                    RelayStatusStore.markGatewayPolicy(this, client.lastPolicySummary());
                     for (PendingMessage message : messages) {
+                        // A foreground operator stop must prevent additional queued sends.
+                        if (!running || !GatewayConfig.load(this).messagingEnabled) {
+                            break;
+                        }
                         String messageValidationError = message.validationError();
                         if (messageValidationError != null) {
+                            RecentActivityStore.record(this, message.id, "failed", null);
                             StatusReportQueue.enqueue(this, message.id, "failed", messageValidationError);
                             StatusReportQueue.flush(this, client);
                             continue;
@@ -94,6 +103,7 @@ public class RelayService extends Service {
                         if (SmsAttemptStore.exists(this, message.id)) {
                             if (SmsAttemptStore.isStale(this, message.id, System.currentTimeMillis())) {
                                 SmsAttemptStore.remove(this, message.id);
+                                RecentActivityStore.record(this, message.id, "failed", STALE_SMS_ATTEMPT_DETAIL);
                                 StatusReportQueue.enqueue(this, message.id, "failed", STALE_SMS_ATTEMPT_DETAIL);
                                 StatusReportQueue.flush(this, client);
                                 RelayStatusStore.markMessageSkipped(
@@ -116,16 +126,20 @@ public class RelayService extends Service {
                         }
 
                         try {
+                            if (!running || !GatewayConfig.load(this).messagingEnabled) {
+                                break;
+                            }
                             sender.send(this, message);
                             RelayStatusStore.markMessageQueued(this, message);
                         } catch (Exception sendError) {
                             SmsAttemptStore.remove(this, message.id);
-                            StatusReportQueue.enqueue(this, message.id, "failed", sendError.getClass().getSimpleName());
+                            RecentActivityStore.record(this, message.id, "failed", "SEND_EXCEPTION");
+                            StatusReportQueue.enqueue(this, message.id, "failed", "SEND_EXCEPTION");
                             StatusReportQueue.flush(this, client);
                         }
                     }
                 } catch (Exception error) {
-                    Log.w(TAG, "Polling failed", error);
+                    Log.w(TAG, "Polling failed: " + GatewayFailureGuide.classify(error));
                     RelayStatusStore.markPollFailed(this, error);
                 }
                 sleep(config.pollSeconds);
@@ -160,6 +174,14 @@ public class RelayService extends Service {
         }
     }
 
+    private void refreshNotification() {
+        if (!running) return;
+        NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (manager != null) {
+            manager.notify(100, notification());
+        }
+    }
+
     private Notification notification() {
         Notification.Builder builder = Build.VERSION.SDK_INT >= 26
             ? new Notification.Builder(this, CHANNEL_ID)
@@ -171,9 +193,11 @@ public class RelayService extends Service {
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
+        RelayStatusStore.Snapshot state = RelayStatusStore.load(this);
         return builder
             .setContentTitle(getString(R.string.app_name))
-            .setContentText(getString(R.string.relay_running))
+            .setContentText(RelayNotificationText.summary(
+                state.serviceRunning, state.gatewayCategory, state.pendingReportCount))
             .setSmallIcon(android.R.drawable.stat_sys_upload)
             .setContentIntent(contentIntent)
             .setOngoing(true)

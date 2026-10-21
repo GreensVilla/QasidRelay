@@ -3,6 +3,11 @@ name: CI
 on:
   pull_request:
   push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   static:
@@ -81,3 +86,46 @@ jobs:
           name: qasidrelay-signed-release-apk
           path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
+
+  instrumentation:
+    if: github.event_name == 'pull_request'
+    # Emulator coverage supplements (and cannot replace) testing with a real SIM.
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Enable KVM acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Instrumented Android smoke tests (emulator)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          target: google_apis
+          arch: x86_64
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: true
+          script: |
+            ./gradlew :app:connectedDebugAndroidTest --no-daemon
+            # Android Gradle instrumentation may uninstall the tested APK on completion.
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb shell am start -W -n org.greensvilla.qasidrelay/.MainActivity
+            sleep 3
+            adb shell pidof org.greensvilla.qasidrelay
+            mkdir -p app/build/reports/androidTests/connected
+            adb exec-out screencap -p > app/build/reports/androidTests/connected/operator-home.png
+      - name: Upload instrumentation reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qasidrelay-instrumentation-results
+          path: |
+            app/build/reports/androidTests/connected/
+            app/build/outputs/androidTest-results/connected/
+          if-no-files-found: ignore

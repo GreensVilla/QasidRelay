@@ -1,8 +1,17 @@
 # 03 — Battery optimization guidance
 
-Status: `PLANNED`
+Status: `IN PROGRESS` (initial Android public-API guidance committed)
 
 Priority: `P0`
+
+## Implemented so far
+
+- Public PowerManager battery exemption check with cautious help text.
+- System battery settings shortcut and application details fallback.
+- No new Android permissions or automatic battery-optimization exemption.
+
+Pending: hardware-based vendor guidance, real-device settings navigation and
+background-polling evidence. Actual reliable background behavior is unverified.
 
 ## Goal
 

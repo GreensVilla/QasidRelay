@@ -25,8 +25,71 @@ path and increasing `versionCode`, so they should update in place.
 The Android app has a working polling baseline, HMAC-signed requests,
 Keystore-backed private relay key storage, simplified operator setup with
 optional setup QR/deep-link prefill, local status reporting, Android sent
-callbacks, manual restart handling, and request-signing unit tests. The next
-major milestone is real-device validation against a test gateway.
+callbacks, manual restart handling, and request-signing unit tests. A controlled GreensVilla staging OTP smoke test passed on July 29, 2026. Broader device, battery and background-reliability testing remains necessary.
+
+## Operator experience (unreleased)
+
+For small phones, the home screen now prioritizes its one-line health summary
+and explicit messaging controls. Technical status rows can be expanded on
+demand; advanced server setup is below the primary operator controls.
+
+
+The software-side operator feature pass also includes a safe foreground
+notification, optional device-credential lock for sensitive actions,
+a **passive** guided test checklist and an optional read-only
+gateway destination-policy display. The relay uses `START_NOT_STICKY`
+to preserve operator-controlled foreground restart behavior.
+
+The Android CI now includes optional emulator instrumentation in pull requests;
+it does not replace controlled physical-SIM validation. Features requiring
+untested SIM hardware, per-gateway profile migration or wider provider support
+remain deferred until on-device verification.
+
+
+A built-in **Help & documentation** picker opens official GitHub setup,
+troubleshooting, security, abuse-policy, protocol and server-integration
+resources in an external browser. URLs are static and include no device ID,
+relay key, gateway address or other device configuration.
+
+
+A safe gateway-health category now distinguishes **idle/no pending jobs**,
+**network unavailable**, **TLS failure**, **timeout**, **authentication denied**,
+**rate limit**, and **server error**. The operator UI explains a suggested next
+step. The display shows the configured polling interval; the relay does not
+claim to use exponential backoff or report an exact next-retry countdown.
+Raw exception messages are not shown or persisted by this health classification.
+
+
+The UI also shows the installed app version/build and provides an external link
+to the project's official GitHub Releases page. It does not download or install
+APKs automatically, call an update API, or transmit relay identifiers to GitHub
+as part of a background check.
+
+
+The setup screen now offers a **local field check** (no network request),
+explicitly guards changing server URL/device identity or rotating the key
+while the relay is enabled or reports/SMS callbacks are outstanding, and
+provides a confirmed **Forget this server** action. Reset clears server
+credentials and gateway-specific local history after the safety checks.
+It never auto-enables sending or exposes the saved private key.
+
+
+The second pass adds **Recent activity** (up to 20 redacted local SMS events),
+short operator explanations for common SMS send failures, and a confirmed
+**Clear local activity** action. Clearing the display does not touch the
+pending-report queue, in-flight attempts, or duplicate-send ledger.
+Android `sent` callbacks mean accepted for sending—not recipient delivery.
+The activity panel, like the dashboard, requires physical-device validation.
+
+
+The operator UX branch adds a clearer relay overview with a suggested next
+action, relative polling times, redacted diagnostics copying, and battery
+settings guidance. **These updates are not in the signed v0.1.7 APK.**
+
+Diagnostics omit relay keys, setup links, raw exception messages, message IDs,
+SMS contents, and recipient numbers. Review the report before sharing it with
+trusted support. Android battery optimization settings are advisory and do not
+guarantee reliable background polling.
 
 ## Intended use cases
 

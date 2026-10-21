@@ -1,8 +1,20 @@
 # 07 — App version and update check
 
-Status: `PLANNED`
+Status: `IN PROGRESS` (installed-version visibility and external release link committed)
 
 Priority: `P1`
+
+## Implemented so far
+
+- Main screen shows local installed version name and build code.
+- Explicit external browser link to official GitHub Releases page.
+- Explains signed update-in-place and debug/uninstall behavior.
+- No background API request, secret sharing, downloader or automatic installation.
+- Pure JVM tests for safe formatting/link constants.
+
+Still pending: physical device browser-intent test, version screenshots, and
+optional later opt-in safe update metadata check if justified. No "latest"
+state is claimed without a release check.
 
 ## Goal
 

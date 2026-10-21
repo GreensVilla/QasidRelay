@@ -1,8 +1,21 @@
 # 13 — Guided real-device test mode
 
-Status: `PLANNED`
+Status: `IN PROGRESS` (passive local checklist implemented)
 
 Priority: `P2`
+
+## Implemented so far
+
+- Local opt-in test session with an explicit start/end time and checklist.
+- Observes current configured/permission/service state and successful gateway
+  polling after test start; never opens a second polling loop.
+- Requires a new send/accepted callback, matching gateway status acknowledgement
+  and zero pending reports to mark the local SMS smoke test passed.
+- No generated test jobs, receiver inbox access or recipient numbers.
+- Unit tests cover incomplete sessions and no carrier-delivery claims.
+
+Still pending: emulator/device UI testing and one real SIM gateway test with
+redacted evidence. Local pass is not carrier delivery proof.
 
 ## Goal
 

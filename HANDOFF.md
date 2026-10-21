@@ -1,6 +1,55 @@
 # QasidRelay handoff
 
-Updated: 2026-07-29
+Updated: 2026-07-29 (historical handoff; see addendum)
+
+## Operator UX addendum — 2026-10-21 (unreleased)
+
+Latest software-side development:
+
+- Corrected Android relay startup to use `START_NOT_STICKY` and changed
+  polling logging to a coarse, redacted failure category.
+- Foreground notification summarizes safe gateway state/pending report count.
+- Added passive guided device-test checklist based on a fresh local send,
+  gateway acknowledgement and empty report queue; no synthetic sending.
+- Added opt-in Android device-credential gate for sensitive operator actions,
+  with no app-managed PIN or extra permissions.
+- Added a backward-compatible gateway-reported destination-policy display.
+- Added new JVM tests and an emulator instrumentation CI job (real SIM still
+  required for full validation).
+- Detailed release and device test checklist items remain gating for a signed
+  prerelease; do not claim production readiness solely from CI.
+
+
+Third implementation pass:
+
+- Guard editing gateway identity and relay key during active messaging,
+  outstanding report queue items, or in-flight SMS attempts.
+- Add local-only setup field validation and a confirmed Forget server action.
+- When a gateway identity actually changes safely, clear the prior gateway's
+  local deduplication history and UI activity, and reset stale dashboard state.
+- Stop starting additional fetched jobs after messaging is disabled.
+- No new permissions. Real-device validation is still mandatory before release.
+
+
+Second implementation on the same branch adds bounded, redacted recent activity,
+plain-language SMS error guidance, and confirmed history clearing independent
+of safety-critical delivery state. Includes JVM tests and Android instrumentation
+test sources; the latter have **not** been executed on real hardware.
+Gateway callback error details now use safe allowlisted codes, including
+`SMS_RESULT_OTHER` for unknown failures.
+
+
+Branch: `codex/operator-dashboard-diagnostics-ux`.
+
+The first implementation adds an operator status summary and contextual actions,
+safe support diagnostics copying, battery settings guidance, clearer timestamps,
+and JVM tests. It preserves all current Android permissions and the existing
+phone-initiated HTTPS/HMAC SMS protocol.
+
+This is **not a signed release**. Before release, inspect GitHub Actions and
+verify real-device operation, clipboard redaction, battery navigation and small
+screen layouts. The UI still lacks dedicated HTTP category and report queue age
+fields, and vendor-specific battery guidance requires tested evidence.
 
 ## Repository
 

@@ -1,8 +1,21 @@
 # 04 — Safe message activity history
 
-Status: `PLANNED`
+Status: `IN PROGRESS` (initial redacted history implementation committed)
 
 Priority: `P1`
+
+## Implemented so far
+
+- Independent activity preference with a 20-event cap, persisted across restarts.
+- Raw message IDs replaced before storage with truncated SHA-256 fingerprints.
+- No SMS bodies, phone numbers or arbitrary failure strings in local history.
+- Panel shows last five events, with optional expansion and confirmed clearing.
+- Clear action cannot erase the safety-critical deduplication ledger or queue.
+- JVM redaction/retention tests and Android instrumentation test sources added.
+
+Still pending: physical-device smoke evidence, small-screen accessibility,
+attempt-count display and optional coarse recipient indicator. These latter
+two fields are intentionally excluded until privacy requirements are reviewed.
 
 ## Goal
 

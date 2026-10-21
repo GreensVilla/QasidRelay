@@ -16,9 +16,9 @@ field issue makes one task urgent.
 
 Priority order:
 
-1. status dashboard;
-2. redacted diagnostics;
-3. battery optimization guidance;
+1. status dashboard (first UI implementation on the operator UX branch; pending more gateway fields and QA);
+2. redacted diagnostics (copy action implemented; pending device clipboard test);
+3. battery optimization guidance (generic guidance implemented; vendor testing pending);
 4. local message activity history;
 5. SMS failure explanations;
 6. safer setup/reset/key-rotation UX;
@@ -35,6 +35,32 @@ Priority order:
 Global rule: these features must not add `READ_SMS`, inbound phone APIs,
 bulk-marketing workflows, cleartext HTTP, silent post-reboot sending, or secret
 export paths.
+
+## Operator activity work (unreleased)
+
+- Task 04, activity history: implementation committed. Pending physical-device
+  verification and small-screen review.
+- Task 05, SMS error guidance: code and unit tests committed. Additional carrier
+  error mappings and controlled device failure tests remain.
+
+## Safe setup recovery (unreleased)
+
+- Task 06: initial safe configuration guard, local setup check and confirmed
+  server reset implemented. Requires physical-device reset/rotation tests before
+  release. Changing keys with unsettled SMS or reports remains intentionally
+  blocked.
+
+## Operator UX final software-side pass (unreleased)
+
+- Task 09: optional backward-compatible destination-policy display implemented;
+  requires a supporting gateway and device validation.
+- Task 10: optional system device-credential lock implemented; needs hardware
+  confirmation and accessibility testing.
+- Task 11: safe foreground status notifications implemented; needs device QA.
+- Task 13: passive guided device smoke checklist implemented; actual carrier
+  evidence still required.
+- Tasks 08 (dual-SIM) and 14 (multi-profile) remain deferred due to SIM hardware
+  requirements and upgrade/credential migration risks.
 
 ## Near-term
 

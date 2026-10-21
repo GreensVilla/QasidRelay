@@ -1,8 +1,19 @@
 # 15 — Help, docs, and protocol links
 
-Status: `PLANNED`
+Status: `IN PROGRESS` (static official docs chooser implemented)
 
 Priority: `P3`
+
+## Implemented so far
+
+- Main-screen help chooser uses external browser intents.
+- Static HTTPS GitHub links for setup/device tests, Android troubleshooting,
+  threat model, acceptable use, protocol, server integration, security and issues.
+- No injected device parameters, analytics, in-app WebView or new permissions.
+- Unit tests validate HTTPS URL prefix and selected-index bounds.
+
+Still pending: real-device browser navigation and screen-reader checks;
+public docs/site URL migration should happen only after one exists.
 
 ## Goal
 

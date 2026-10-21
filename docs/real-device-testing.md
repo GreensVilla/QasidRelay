@@ -105,3 +105,138 @@ UI so post-reboot SMS sending never happens silently.
   foreground service alive.
 - Reboot/package-replace behavior, including whether the phone shows `Start
   relay service` before polling resumes.
+
+## Operator UI/UX smoke checklist (unreleased)
+
+Run these checks on the operator UX branch before publishing a signed APK:
+
+1. Without a server, confirm **Needs setup** and **Review server connection**
+   appear and the action focuses setup. Never photograph or expose the key.
+2. With valid setup and missing SMS permission, confirm **Needs SMS permission**
+   and its permission action; sending stays blocked.
+3. With permission but messaging disabled, confirm **Messaging paused**.
+   **Enable messaging** must be an explicit operator action.
+4. With messaging enabled and service stopped, confirm **Needs manual restart**.
+   The app must not silently resume polling.
+5. With successful gateway polling, confirm **Ready** and recent check times.
+   Disable connectivity and confirm a warning appears instead of false health.
+6. Confirm the last SMS status and report queue show no destination number,
+   message content or message ID.
+7. Copy diagnostics with and without configured gateway. Paste into an
+   offline editor and confirm it contains no secret, setup QR/deep link,
+   signature, OTP, message body, recipient, raw error message or message ID.
+   Review clipboard text before sharing with trusted support.
+8. Open battery settings and confirm the settings/fallback launches. Record
+   the actual system behavior; no exemption should be granted automatically.
+9. Test an older/small phone, large font scaling, screen rotation, foreground
+   return and the Android notification. Check navigation and button visibility.
+
+Record Android version, device model, screenshots with secrets redacted,
+significant failures and any observed battery/poll interruptions. This
+checklist is not evidence that real-device tests have already passed.
+
+## Recent activity and failure guidance tests (unreleased)
+
+- Send a controlled single-part SMS. Confirm **Submitted to Android**,
+  **Android accepted SMS for sending**, pending gateway report, and report
+  acknowledgement appear without the body, recipient or raw message ID.
+- Produce more than 20 test events. Verify the 20-event limit and initial
+  five-row collapsed view; reopen the app to confirm persistence.
+- Induce a no-service/radio-off failure on an authorized test SIM. Confirm a
+  readable suggestion and no sensitive detail in the UI.
+- Tap **Clear local activity**; cancel once, confirm once. Verify pending
+  gateway reports and duplicate-send protection still function afterwards.
+- Execute `./gradlew :app:connectedDebugAndroidTest` on a physical test phone
+  and record the results for `RecentActivityStoreInstrumentedTest`.
+- Do not claim recipient delivery from Android sent callbacks.
+
+## Configuration change and reset safety (unreleased)
+
+1. On a controlled staging device, save a new HTTPS origin, device name and key.
+   Tap **Check setup locally**. Verify its success message explicitly states
+   that the gateway and signing secret were **not** checked remotely.
+2. Start messaging and try to change the server URL or private key. Confirm it
+   is rejected with **Disable messaging before changing** guidance.
+3. Disable messaging; while a test SMS attempt or status report is still
+   outstanding, attempt key rotation or **Forget this server**. Confirm both
+   are blocked without losing the pending callback/report.
+4. After all reports are acknowledged and callbacks settle, save a new server
+   identity. Verify the new connection starts disabled, previous gateway UI
+   history and message ledger are cleared, and stale last-poll health is reset.
+5. On a separate test setup, tap **Forget this server**, cancel once, confirm
+   once, and verify the app has no URL, device ID, or saved secret. Confirm it
+   cannot resume SMS sending without explicit new setup and operator start.
+6. Disable messaging just after a gateway returns multiple pending messages.
+   Verify the device does not start new sends from that fetched batch once the
+   operator stop takes effect. Capture any observed race separately.
+7. Never run destructive reset tests using live OTPs, customer messages,
+   production gateway credentials or a real user account.
+
+## Installed version and official releases (unreleased)
+
+1. On the app main screen, verify installed version and build match the
+   installed APK's Android package metadata.
+2. Tap **Open official releases** and confirm the trusted browser opens
+   `https://github.com/GreensVilla/QasidRelay/releases`.
+3. Confirm no automatic download, installation or background release-check
+   request takes place, and no relay secret/device ID is sent as URL parameters.
+4. Confirm the help text distinguishes signed release updates from older
+   debug-signed APKs that may require one uninstall.
+
+## Gateway connection categories (unreleased)
+
+- After a successful poll with no jobs, verify **Connected — no pending SMS
+  jobs** rather than an error warning.
+- Use a controlled gateway to return 401/403, 429, 404 and 503 in separate
+  runs. Confirm operator labels correctly distinguish auth, rate limit, bad
+  request and server outage, without displaying raw gateway response content.
+- Disconnect network or introduce an unreachable host to verify the network
+  category; deliberately time out a test gateway and verify timeout category.
+- Use a test endpoint with a TLS certificate mismatch to confirm the TLS error
+  classification. Do not bypass HTTPS certificate verification.
+- Verify the displayed interval reflects the configured polling interval,
+  and does not suggest the app has an unimplemented adaptive backoff policy.
+- Copy diagnostics and confirm no exception text, raw URLs, OTPs or phone
+  numbers appear. Record real-device findings before claiming completion.
+
+## Official help links (unreleased)
+
+1. With no gateway configured, open **Help & documentation**.
+2. Open setup, troubleshooting, security, abuse policy, protocol and server
+   integration resources in the external browser. Verify each official URL
+   remains on `github.com/GreensVilla/QasidRelay`.
+3. Verify no server URL, key, recipient number or device ID is present in
+   the browser URL. Back navigation should return to the operator app.
+4. Repeat with an active relay and a small screen; the Help action must not
+   change SMS permissions, sending state or device configuration.
+
+## Final operator usability and safety checks (unreleased)
+
+1. On a test device with a configured PIN/password, enable **Operator lock**.
+   Confirm changing/saving configuration, enabling/disabling SMS, forgetting
+   server, clearing activity, and copying diagnostics all require device
+   credential approval. Cancel authentication and confirm no action executes.
+2. Disable the device screen lock in Android settings and confirm protected
+   actions fail closed rather than bypassing authentication. Re-enable the
+   device lock to recover. Confirm that relay polling already underway does
+   not depend on foreground authentication.
+3. Open **Guided device test**. Start the local checklist before an approved
+   gateway send. Confirm it cannot report success from an older SMS event and
+   requires a fresh poll, send attempt, Android sent callback, acknowledged
+   gateway status, and empty pending-report queue. Verify the text does not
+   claim delivery to the recipient.
+4. Confirm the foreground notification is actionable only by opening the
+   operator app and shows a generic status/queue count, never a message body,
+   OTP, number, gateway key, or raw error. Check Android 13+ notification
+   permission behavior and verify update cadence is not excessive.
+5. During a staged gateway test, return optional `destination_policy` values:
+   `allowlist_only`, `country_restricted/+92`, `self_managed`, missing,
+   and malformed. Verify correct labels, safe fallback, and no local policy
+   override.
+6. Kill the process after the worker is started and verify the app does not
+   request a sticky silent restart. Operator must explicitly return and
+   start the relay when required. Test reboot and package replacement as
+   documented earlier.
+7. Test on a real phone with a physical authorized SIM, including screen-off
+   polling, multiple SMS parts, failed carrier send and gateway reconnect.
+   Emulator tests **cannot** satisfy this step.

@@ -50,6 +50,16 @@ final class GatewayConfig {
             .apply();
     }
 
+    static void forget(Context context) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putBoolean(KEY_MESSAGING_ENABLED, false)
+            .remove(KEY_BASE_URL)
+            .remove(KEY_DEVICE_ID)
+            .remove(KEY_SHARED_SECRET)
+            .remove(KEY_POLL_SECONDS)
+            .apply();
+    }
+
     static void setMessagingEnabled(Context context, boolean enabled) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()

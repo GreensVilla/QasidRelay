@@ -46,6 +46,15 @@ final class SmsAttemptStore {
         return createdAt <= 0L || nowMillis - createdAt >= STALE_AFTER_MILLIS;
     }
 
+    static synchronized boolean hasAnyPending(Context context) {
+        for (String key : prefs(context).getAll().keySet()) {
+            if (key.startsWith(KEY_TOTAL_PREFIX)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     static long staleAfterMillis() {
         return STALE_AFTER_MILLIS;
     }

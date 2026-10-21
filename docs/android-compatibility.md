@@ -64,3 +64,28 @@ post-reboot SMS sending.
   service. Already-submitted Android SMS callbacks may still complete.
 - `sent` status means Android accepted all SMS parts through sent callbacks; it
   is not a carrier delivery receipt.
+
+## Operator UX battery guidance (unreleased)
+
+The operator screen checks the Android battery optimization API and offers a
+shortcut to system battery settings. It never automatically requests an
+exemption, and no brand-specific background reliability is claimed without
+testing. Messaging still requires an explicit foreground restart after reboot
+or app replacement.
+
+## Unreleased operator additions
+
+- Foreground notifications display only coarse gateway state or pending-report
+  count, refreshing along the existing worker loop (no independent wakeups).
+- The worker returns `START_NOT_STICKY` so Android is not requested to
+  automatically recreate the sending service after process death.
+- Optional operator lock uses `KeyguardManager`'s device credential prompt
+  on Android 6.0+. It requires an already secured Android lock screen.
+  If device security is removed, protected actions fail closed. Polling does
+  not stop or require an unlock after it has been started.
+- Device test mode is passive and never creates test SMS jobs. It only watches
+  real relay activity after an operator begins a local checklist.
+- A read-only destination-policy label is displayed if a compatible gateway
+  provides the optional contract field. It does not change SMS routing.
+- Emulator instrumentation CI covers Keystore and local state tests on a
+  simulated Android 10 device. It cannot validate carrier SIM behavior.
