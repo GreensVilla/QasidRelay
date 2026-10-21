@@ -29,6 +29,12 @@ callbacks, manual restart handling, and request-signing unit tests. A controlled
 
 ## Operator experience (unreleased)
 
+A built-in **Help & documentation** picker opens official GitHub setup,
+troubleshooting, security, abuse-policy, protocol and server-integration
+resources in an external browser. URLs are static and include no device ID,
+relay key, gateway address or other device configuration.
+
+
 A safe gateway-health category now distinguishes **idle/no pending jobs**,
 **network unavailable**, **TLS failure**, **timeout**, **authentication denied**,
 **rate limit**, and **server error**. The operator UI explains a suggested next
