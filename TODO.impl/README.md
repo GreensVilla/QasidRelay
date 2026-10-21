@@ -50,6 +50,18 @@ export paths.
   release. Changing keys with unsettled SMS or reports remains intentionally
   blocked.
 
+## Operator UX final software-side pass (unreleased)
+
+- Task 09: optional backward-compatible destination-policy display implemented;
+  requires a supporting gateway and device validation.
+- Task 10: optional system device-credential lock implemented; needs hardware
+  confirmation and accessibility testing.
+- Task 11: safe foreground status notifications implemented; needs device QA.
+- Task 13: passive guided device smoke checklist implemented; actual carrier
+  evidence still required.
+- Tasks 08 (dual-SIM) and 14 (multi-profile) remain deferred due to SIM hardware
+  requirements and upgrade/credential migration risks.
+
 ## Near-term
 
 - Implement or deploy a small HTTPS/HMAC reference gateway for non-GreensVilla
