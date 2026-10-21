@@ -14,6 +14,7 @@ final class RelayStatusStore {
     private static final String KEY_LAST_MESSAGE_DETAIL = "status_last_message_detail";
     private static final String KEY_LAST_MESSAGE_AT = "status_last_message_at";
     private static final String KEY_PENDING_REPORT_COUNT = "status_pending_report_count";
+    private static final String KEY_GATEWAY_CATEGORY = "status_gateway_category";
 
     private RelayStatusStore() {
     }
@@ -30,6 +31,7 @@ final class RelayStatusStore {
             .remove(KEY_LAST_MESSAGE_DETAIL)
             .remove(KEY_LAST_MESSAGE_AT)
             .putInt(KEY_PENDING_REPORT_COUNT, 0)
+            .remove(KEY_GATEWAY_CATEGORY)
             .apply();
     }
 
@@ -69,13 +71,15 @@ final class RelayStatusStore {
             .putString(KEY_STATE, "Running")
             .putString(KEY_DETAIL, messageCount == 0 ? "No pending messages." : "Fetched " + messageCount + " pending message(s).")
             .putLong(KEY_LAST_SUCCESS_AT, System.currentTimeMillis())
+            .putString(KEY_GATEWAY_CATEGORY, messageCount == 0 ? "idle" : "active")
             .apply();
     }
 
     static void markPollFailed(Context context, Exception error) {
         edit(context)
             .putString(KEY_STATE, "Poll failed")
-            .putString(KEY_DETAIL, safeDetail(error))
+            .putString(KEY_DETAIL, GatewayFailureGuide.title(GatewayFailureGuide.classify(error)))
+            .putString(KEY_GATEWAY_CATEGORY, GatewayFailureGuide.classify(error))
             .apply();
     }
 
@@ -124,7 +128,9 @@ final class RelayStatusStore {
         edit(context)
             .putString(KEY_LAST_MESSAGE_ID, messageId)
             .putString(KEY_LAST_MESSAGE_STATUS, status)
-            .putString(KEY_LAST_MESSAGE_DETAIL, "Status report pending: " + safeDetail(error))
+            .putString(KEY_LAST_MESSAGE_DETAIL, "Status report pending: " +
+                GatewayFailureGuide.title(GatewayFailureGuide.classify(error)))
+            .putString(KEY_GATEWAY_CATEGORY, GatewayFailureGuide.classify(error))
             .putLong(KEY_LAST_MESSAGE_AT, System.currentTimeMillis())
             .putInt(KEY_PENDING_REPORT_COUNT, StatusReportQueue.count(context))
             .apply();
@@ -146,7 +152,8 @@ final class RelayStatusStore {
             prefs.getString(KEY_LAST_MESSAGE_STATUS, ""),
             prefs.getString(KEY_LAST_MESSAGE_DETAIL, ""),
             prefs.getLong(KEY_LAST_MESSAGE_AT, 0L),
-            prefs.getInt(KEY_PENDING_REPORT_COUNT, StatusReportQueue.count(context))
+            prefs.getInt(KEY_PENDING_REPORT_COUNT, StatusReportQueue.count(context)),
+            prefs.getString(KEY_GATEWAY_CATEGORY, "unknown")
         );
     }
 
@@ -177,6 +184,7 @@ final class RelayStatusStore {
         final String lastMessageDetail;
         final long lastMessageAt;
         final int pendingReportCount;
+        final String gatewayCategory;
 
         Snapshot(
             boolean serviceRunning,
@@ -188,7 +196,8 @@ final class RelayStatusStore {
             String lastMessageStatus,
             String lastMessageDetail,
             long lastMessageAt,
-            int pendingReportCount
+            int pendingReportCount,
+            String gatewayCategory
         ) {
             this.serviceRunning = serviceRunning;
             this.state = state == null ? "" : state;
@@ -200,6 +209,7 @@ final class RelayStatusStore {
             this.lastMessageDetail = lastMessageDetail == null ? "" : lastMessageDetail;
             this.lastMessageAt = lastMessageAt;
             this.pendingReportCount = pendingReportCount;
+            this.gatewayCategory = gatewayCategory == null ? "unknown" : gatewayCategory;
         }
     }
 }
