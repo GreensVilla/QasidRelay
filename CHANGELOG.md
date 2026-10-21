@@ -2,6 +2,14 @@
 
 ## Unreleased — operator UI/UX improvements
 
+### Help and troubleshooting links
+
+- Add external Help & documentation menu linking to maintained QasidRelay
+  setup, compatibility, security, abuse, protocol, integration and issue docs.
+- Keep the links static; never append gateway data, device identifiers or keys.
+- Add JVM checks for trusted HTTPS host and repository-scoped paths.
+
+
 ### Gateway connectivity visibility
 
 - Classify HTTP auth, rate-limit and server errors separately from idle/no-jobs.
