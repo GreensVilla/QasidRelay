@@ -425,7 +425,7 @@ public class MainActivity extends Activity {
         RelayStatusStore.Snapshot status = RelayStatusStore.load(this);
         OperatorStatus.Presentation state = OperatorStatus.resolve(
             config.isReady(), hasSmsPermission(), config.messagingEnabled,
-            status.serviceRunning, status.state, status.lastSuccessAt,
+            RelayService.isActive(), status.state, status.lastSuccessAt,
             System.currentTimeMillis(), config.pollSeconds
         );
         switch (state.action) {
@@ -551,7 +551,7 @@ public class MainActivity extends Activity {
         RelayStatusStore.Snapshot status = RelayStatusStore.load(this);
         boolean configured = config.isReady();
         boolean permitted = hasSmsPermission();
-        boolean service = config.messagingEnabled && status.serviceRunning;
+        boolean service = config.messagingEnabled && RelayService.isActive();
         boolean checked = status.lastSuccessAt >= started;
         String expectedRef = RecentActivityPolicy.fingerprint(status.lastMessageId);
         boolean sentAfterStart = false;
@@ -709,7 +709,7 @@ public class MainActivity extends Activity {
             java.util.UUID.randomUUID().toString(), versionName, versionCode,
             Build.MANUFACTURER, Build.MODEL, Build.VERSION.SDK_INT,
             SafeDiagnostics.safeServerHost(config.baseUrl),
-            config.messagingEnabled, status.serviceRunning, hasSmsPermission(),
+            config.messagingEnabled, RelayService.isActive(), hasSmsPermission(),
             hasNotificationPermission(), isBatteryExempt(), status.state,
             status.lastPollAt, status.lastSuccessAt, status.lastMessageStatus,
             status.pendingReportCount
@@ -863,7 +863,7 @@ public class MainActivity extends Activity {
     private void toggleMessaging() {
         GatewayConfig config = GatewayConfig.load(this);
         RelayStatusStore.Snapshot status = RelayStatusStore.load(this);
-        if (config.messagingEnabled && status.serviceRunning) {
+        if (config.messagingEnabled && RelayService.isActive()) {
             disableMessaging("Messaging disabled. No new pending jobs will be fetched or sent.");
         } else {
             enableMessaging();
@@ -927,10 +927,10 @@ public class MainActivity extends Activity {
         GatewayConfig config = GatewayConfig.load(this);
         RelayStatusStore.Snapshot status = RelayStatusStore.load(this);
         String validationError = config.validationError();
-        boolean serviceNeedsStart = config.messagingEnabled && !status.serviceRunning;
+        boolean serviceNeedsStart = config.messagingEnabled && !RelayService.isActive();
         OperatorStatus.Presentation summary = OperatorStatus.resolve(
             validationError == null, hasSmsPermission(), config.messagingEnabled,
-            status.serviceRunning, status.state, status.lastSuccessAt,
+            RelayService.isActive(), status.state, status.lastSuccessAt,
             System.currentTimeMillis(), config.pollSeconds
         );
         if (summaryTitleText != null) {
@@ -1001,7 +1001,7 @@ public class MainActivity extends Activity {
             queueStatusText.setText("Report queue: " + status.pendingReportCount + " pending");
         }
         if (messagingToggleButton != null) {
-            if (config.messagingEnabled && status.serviceRunning) {
+            if (config.messagingEnabled && RelayService.isActive()) {
                 messagingToggleButton.setText("Disable messaging");
                 messagingToggleButton.setBackground(roundedBackground(COLOR_DANGER));
             } else if (config.messagingEnabled) {
@@ -1013,7 +1013,7 @@ public class MainActivity extends Activity {
             }
         }
         if (messagingHelpText != null) {
-            if (config.messagingEnabled && status.serviceRunning) {
+            if (config.messagingEnabled && RelayService.isActive()) {
                 messagingHelpText.setText("Enabled: this phone may fetch pending jobs and submit SMS through the SIM.");
             } else if (config.messagingEnabled) {
                 messagingHelpText.setText("Enabled but not running: tap Start relay service to resume polling after reboot, app update, or service stop.");

@@ -18,6 +18,11 @@ public class RelayService extends Service {
     private static final String CHANNEL_ID = "relay-status";
     private static final String STALE_SMS_ATTEMPT_DETAIL = "stale_sms_attempt_without_android_callback";
     private volatile boolean running;
+    private static volatile boolean activeInThisProcess;
+
+    static boolean isActive() {
+        return activeInThisProcess;
+    }
     private Thread worker;
 
     @Override
@@ -31,6 +36,7 @@ public class RelayService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (worker == null || !worker.isAlive()) {
             running = true;
+            activeInThisProcess = true;
             worker = new Thread(this::runLoop, "QasidRelayWorker");
             worker.start();
         }
@@ -42,6 +48,7 @@ public class RelayService extends Service {
     @Override
     public void onDestroy() {
         running = false;
+        activeInThisProcess = false;
         if (worker != null) {
             worker.interrupt();
         }
@@ -145,6 +152,7 @@ public class RelayService extends Service {
                 sleep(config.pollSeconds);
             }
         } finally {
+            activeInThisProcess = false;
             RelayStatusStore.markServiceRunning(this, false);
         }
     }
