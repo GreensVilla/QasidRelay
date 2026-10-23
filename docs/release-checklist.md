@@ -75,3 +75,15 @@ Use this before publishing an APK from GitHub Releases.
       verify its signature and APK install/update path.
 - [ ] Do not mark hardware-sensitive items done or advertise production use
       without recorded device evidence; CI emulator is supplementary.
+
+## 0.1.8-rc2 QA-specific validation
+
+- [ ] Verify the foreground worker status does not show Ready after Android
+      kills the process and the operator opens the app again. With messaging
+      still enabled but no live service, it must offer Start relay service.
+- [ ] Validate callback-order regression: terminal sent/failed state must not
+      be overwritten by later queued/skipped UI updates.
+- [ ] Confirm the signed candidate reports versionCode 10 / 0.1.8-rc2 and
+      maintains the v0.1.7 signing identity; this still requires testing an
+      update on the actual phone.
+- [ ] Treat all preexisting physical-device QA requirements as outstanding.

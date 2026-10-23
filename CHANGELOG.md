@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased — 0.1.8-rc2 QA lifecycle hardening
+
+- Resolve actual foreground-service liveness from the in-process active
+  service rather than a persisted "running" flag left behind by process death.
+- Preserve terminal Android SMS callback results when a fast callback arrives
+  before the sender finishes updating the pending UI state.
+- Serialize message-status UI updates to prevent callback/send ordering regressions.
+- Add emulator regression coverage for terminal status ordering and stopped
+  service restart UI. No permissions or gateway protocol changes.
+- Increment Android versionCode to 10 for an explicitly separate QA candidate.
+
+
+
 ## Unreleased — operator UI/UX improvements
 
 ### Small-screen usability

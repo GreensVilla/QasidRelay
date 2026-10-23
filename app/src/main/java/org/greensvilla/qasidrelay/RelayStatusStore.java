@@ -90,7 +90,12 @@ final class RelayStatusStore {
             policy == null ? GatewayPolicy.NOT_REPORTED : policy).apply();
     }
 
-    static void markMessageQueued(Context context, PendingMessage message) {
+    static synchronized void markMessageQueued(Context context, PendingMessage message) {
+        // Android can return the sent callback before SmsSender.send() returns.
+        // Never downgrade a terminal result to merely "queued" in that race.
+        if (isAlreadyTerminal(context, message.id)) {
+            return;
+        }
         RecentActivityStore.record(context, message.id, "sending", null);
         edit(context)
             .putString(KEY_LAST_MESSAGE_ID, message.id)
@@ -100,7 +105,10 @@ final class RelayStatusStore {
             .apply();
     }
 
-    static void markMessageSkipped(Context context, PendingMessage message, String detail) {
+    static synchronized void markMessageSkipped(Context context, PendingMessage message, String detail) {
+        if (isAlreadyTerminal(context, message.id)) {
+            return;
+        }
         RecentActivityStore.record(context, message.id, "skipped", null);
         edit(context)
             .putString(KEY_LAST_MESSAGE_ID, message.id)
@@ -110,7 +118,7 @@ final class RelayStatusStore {
             .apply();
     }
 
-    static void markReportQueued(Context context, String messageId, String status) {
+    static synchronized void markReportQueued(Context context, String messageId, String status) {
         edit(context)
             .putString(KEY_LAST_MESSAGE_ID, messageId)
             .putString(KEY_LAST_MESSAGE_STATUS, status)
@@ -120,7 +128,7 @@ final class RelayStatusStore {
             .apply();
     }
 
-    static void markStatusReported(Context context, String messageId, String status) {
+    static synchronized void markStatusReported(Context context, String messageId, String status) {
         RecentActivityStore.record(context, messageId, "reported", null);
         edit(context)
             .putString(KEY_LAST_MESSAGE_ID, messageId)
@@ -131,7 +139,7 @@ final class RelayStatusStore {
             .apply();
     }
 
-    static void markStatusReportFailed(Context context, String messageId, String status, Exception error) {
+    static synchronized void markStatusReportFailed(Context context, String messageId, String status, Exception error) {
         edit(context)
             .putString(KEY_LAST_MESSAGE_ID, messageId)
             .putString(KEY_LAST_MESSAGE_STATUS, status)
@@ -163,6 +171,14 @@ final class RelayStatusStore {
             prefs.getString(KEY_GATEWAY_CATEGORY, "unknown"),
             prefs.getString(KEY_GATEWAY_POLICY, GatewayPolicy.NOT_REPORTED)
         );
+    }
+
+    private static boolean isAlreadyTerminal(Context context, String messageId) {
+        SharedPreferences current = prefs(context);
+        String priorId = current.getString(KEY_LAST_MESSAGE_ID, "");
+        String priorStatus = current.getString(KEY_LAST_MESSAGE_STATUS, "");
+        return messageId != null && messageId.equals(priorId) &&
+            ("sent".equals(priorStatus) || "failed".equals(priorStatus));
     }
 
     private static SharedPreferences prefs(Context context) {

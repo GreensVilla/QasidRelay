@@ -18,8 +18,8 @@ android {
         applicationId = "org.greensvilla.qasidrelay"
         minSdk = 23
         targetSdk = 35
-        versionCode = 9
-        versionName = "0.1.8-rc1"
+        versionCode = 10
+        versionName = "0.1.8-rc2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
